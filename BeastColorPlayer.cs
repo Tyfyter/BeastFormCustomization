@@ -12,6 +12,7 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.IO;
+using Terraria.UI;
 
 namespace BeastCustomization {
 	public class BeastColorPlayer : ModPlayer {
@@ -144,7 +145,7 @@ namespace BeastCustomization {
 		internal static bool enabled = true;
 		public override void HideDrawLayers(PlayerDrawSet drawInfo) {
 			enabled = true;
-			if (Terraria.GameInput.PlayerInput.Triggers.JustPressed.Down) Terraria.UI.IngameFancyUI.OpenUIState(new CustomizationMenuState());
+			if (BeastCustomization.OpenMenuHotkey.JustPressed) IngameFancyUI.OpenUIState(new CustomizationMenuState());
 			if (!enabled) return;
 			if (drawInfo.drawPlayer.head == ArmorIDs.Head.Werewolf) {
 				PlayerDrawLayers.Head.Hide();
