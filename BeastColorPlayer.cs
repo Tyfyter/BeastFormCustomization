@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Terraria;
 using Terraria.DataStructures;
+using Terraria.GameContent.UI.States;
+using Terraria.GameInput;
 using Terraria.Graphics.Shaders;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -16,26 +19,56 @@ using Terraria.UI;
 
 namespace BeastCustomization {
 	public class BeastColorPlayer : ModPlayer {
+		[Label("Head Fur Style")]
 		[ListRange("HeadFurTextures"), Slider]
-		public int headFurStyle = 0;
+		public int headFurStyle = 1;
+
+		[Label("Teeth Style")]
 		[ListRange("HeadTeethTextures"), Slider]
 		public int headTeethStyle = 0;
+
+		[Label("Body Fur Style")]
 		[ListRange("BodyFurTextures"), Slider]
-		public int bodyFurStyle = 0;
+		public int bodyFurStyle = 1;
+
+		[Label("Body Secondary Fur Style")]
 		[ListRange("BodySecondaryFurTextures"), Slider]
 		public int bodySecondaryFurStyle = 0;
+
+		[Label("Body Claws Style")]
 		[ListRange("BodyClawsTextures"), Slider]
 		public int bodyClawsStyle = 0;
+
+		[Label("Legs Fur Style")]
 		[ListRange("LegsFurTextures"), Slider]
-		public int legsFurStyle = 0;
+		public int legsFurStyle = 1;
+
+		[Label("Legs Claws Style")]
 		[ListRange("LegsClawsTextures"), Slider]
 		public int legsClawsStyle = 0;
+
+		[Label("Glowing Eyes")]
 		public bool eyesGlow = false;
+
+		[Label("Apply Dye to Eyes")]
+		public bool eyesDye = false;
+
+		[Label("Iris Color")]
 		public Color eyesIrisColor = new Color(242, 8, 46);
+
+		[Label("Sclera Color")]
 		public Color eyesScleraColor = new Color(241, 241, 241);
+
+		[Label("Teeth Color")]
 		public Color headTeethColor = new Color(227, 232, 238);
+
+		[Label("Fur Color")]
 		public Color furColor = new Color(220, 153, 107);
+
+		[Label("Secondary Fur Color")]
 		public Color furColor2 = new Color(190, 153, 117);
+
+		[Label("Claws Color")]
 		public Color clawsColor = new Color(222, 206, 192);
 
 		int oldHeadFurStyle;
@@ -52,6 +85,12 @@ namespace BeastCustomization {
 		Color oldFurColor;
 		Color oldFurColor2;
 		Color oldClawsColor;
+		List<TagCompound> _presets;
+		[JsonIgnore]
+		public List<TagCompound> Presets {
+			get => _presets ??= new();
+			set => _presets = value ?? new();
+		}
 		public void StartCustomization() {
 			oldHeadFurStyle = headFurStyle;
 			oldHeadTeethStyle = headTeethStyle;
@@ -86,7 +125,7 @@ namespace BeastCustomization {
 				clawsColor = oldClawsColor;
 			}
 		}
-		int GetSlot(int slotNum){
+		int GetSlot(int slotNum) {
 			switch (slotNum) {
 				case 0:
 				if (Player.armor[10].headSlot >= 0) {
@@ -110,7 +149,7 @@ namespace BeastCustomization {
 				return -1;
 			}
 		}
-		public override void SaveData(TagCompound tag) {
+		public void ExportData(TagCompound tag) {
 			tag["headFurStyle"] = headFurStyle;
 			tag["headTeethStyle"] = headTeethStyle;
 			tag["bodyFurStyle"] = bodyFurStyle;
@@ -119,6 +158,7 @@ namespace BeastCustomization {
 			tag["legsFurStyle"] = legsFurStyle;
 			tag["legsClawsStyle"] = legsClawsStyle;
 			tag["eyesGlow"] = eyesGlow;
+			tag["eyesDye"] = eyesDye;
 			tag["eyesIrisColor"] = eyesIrisColor;
 			tag["eyesScleraColor"] = eyesScleraColor;
 			tag["headTeethColor"] = headTeethColor;
@@ -126,21 +166,55 @@ namespace BeastCustomization {
 			tag["furColor2"] = furColor2;
 			tag["clawsColor"] = clawsColor;
 		}
+		public override void SaveData(TagCompound tag) {
+			ExportData(tag);
+			tag["SavedPresets"] = Presets;
+		}
+		public void ImportData(TagCompound tag) {
+			if (tag.TryGet("headFurStyle", out int tempHeadFurStyle)) headFurStyle = tempHeadFurStyle;
+			if (tag.TryGet("headTeethStyle", out int tempHeadTeethStyle)) headTeethStyle = tempHeadTeethStyle;
+			if (tag.TryGet("bodyFurStyle", out int tempBodyFurStyle)) bodyFurStyle = tempBodyFurStyle;
+			if (tag.TryGet("bodySecondaryFurStyle", out int tempBodySecondaryFurStyle)) bodySecondaryFurStyle = tempBodySecondaryFurStyle;
+			if (tag.TryGet("bodyClawsStyle", out int tempBodyClawsStyle)) bodyClawsStyle = tempBodyClawsStyle;
+			if (tag.TryGet("legsFurStyle", out int tempLegsFurStyle)) legsFurStyle = tempLegsFurStyle;
+			if (tag.TryGet("legsClawsStyle", out int tempLegsClawsStyle)) legsClawsStyle = tempLegsClawsStyle;
+			if (tag.TryGet("eyesGlow", out bool tempEyesGlow)) eyesGlow = tempEyesGlow;
+			if (tag.TryGet("eyesDye", out bool tempEyesDye)) eyesDye = tempEyesDye;
+			if (tag.TryGet("eyesIrisColor", out Color tempEyesIrisColor)) eyesIrisColor = tempEyesIrisColor;
+			if (tag.TryGet("eyesScleraColor", out Color tempEyesScleraColor)) eyesScleraColor = tempEyesScleraColor;
+			if (tag.TryGet("headTeethColor", out Color tempHeadTeethColor)) headTeethColor = tempHeadTeethColor;
+			if (tag.TryGet("furColor", out Color tempFurColor)) furColor = tempFurColor;
+			if (tag.TryGet("furColor2", out Color tempFurColor2)) furColor2 = tempFurColor2;
+			if (tag.TryGet("clawsColor", out Color tempClawsColor)) clawsColor = tempClawsColor;
+		}
 		public override void LoadData(TagCompound tag) {
-			if(tag.TryGet("headFurStyle", out int tempHeadFurStyle)) headFurStyle = tempHeadFurStyle;
-			if(tag.TryGet("headTeethStyle", out int tempHeadTeethStyle)) headTeethStyle = tempHeadTeethStyle;
-			if(tag.TryGet("bodyFurStyle", out int tempBodyFurStyle)) bodyFurStyle = tempBodyFurStyle;
-			if(tag.TryGet("bodySecondaryFurStyle", out int tempBodySecondaryFurStyle)) bodySecondaryFurStyle = tempBodySecondaryFurStyle;
-			if(tag.TryGet("bodyClawsStyle", out int tempBodyClawsStyle)) bodyClawsStyle = tempBodyClawsStyle;
-			if(tag.TryGet("legsFurStyle", out int tempLegsFurStyle)) legsFurStyle = tempLegsFurStyle;
-			if(tag.TryGet("legsClawsStyle", out int tempLegsClawsStyle)) legsClawsStyle = tempLegsClawsStyle;
-			if(tag.TryGet("eyesGlow", out bool tempEyesGlow)) eyesGlow = tempEyesGlow;
-			if(tag.TryGet("eyesIrisColor", out Color tempEyesIrisColor)) eyesIrisColor = tempEyesIrisColor;
-			if(tag.TryGet("eyesScleraColor", out Color tempEyesScleraColor)) eyesScleraColor = tempEyesScleraColor;
-			if(tag.TryGet("headTeethColor", out Color tempHeadTeethColor)) headTeethColor = tempHeadTeethColor;
-			if(tag.TryGet("furColor", out Color tempFurColor)) furColor = tempFurColor;
-			if(tag.TryGet("furColor2", out Color tempFurColor2)) furColor2 = tempFurColor2;
-			if(tag.TryGet("clawsColor", out Color tempClawsColor)) clawsColor = tempClawsColor;
+			ImportData(tag);
+			if (tag.TryGet("SavedPresets", out List<TagCompound> tempPresets)) Presets = tempPresets;
+		}
+		internal Tuple<UIButton, TagCompound, string> renamingPreset;
+		public override void PreUpdate() {
+			if (renamingPreset is not null) {
+				if (!IngameFancyUI.CanShowVirtualKeyboard(2) || UIVirtualKeyboard.KeyboardContext != 2) {
+					string text = renamingPreset.Item1.Text;
+					string oldText = text;
+					if (text == " ") text = "";
+					PlayerInput.WritingText = true;
+					Main.instance.HandleIME();
+					text = Main.GetInputText(text);
+					if (text == "") text = " ";
+					if (text != oldText) {
+						renamingPreset.Item1.Text = text;
+					}
+					if (Main.inputTextEnter) {
+						renamingPreset.Item2["presetName"] = text;
+						renamingPreset = null;
+					} else if (Main.inputTextEscape) {
+						renamingPreset.Item1.Text = renamingPreset.Item3;
+						renamingPreset = null;
+					}
+				}
+				Main.editSign = true;
+			}
 		}
 		internal static bool enabled = true;
 		public override void HideDrawLayers(PlayerDrawSet drawInfo) {
@@ -151,11 +225,17 @@ namespace BeastCustomization {
 				PlayerDrawLayers.Head.Hide();
 			}
 			if (drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf) {
+				PlayerDrawLayers.Skin.Hide();
 				PlayerDrawLayers.Torso.Hide();
 				PlayerDrawLayers.ArmOverItem.Hide();
 			}
 			if (drawInfo.drawPlayer.legs == 20) {
 				PlayerDrawLayers.Leggings.Hide();
+			}
+		}
+		public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
+			if (drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf) {
+				//drawInfo.armorHidesArms = true;
 			}
 		}
 	}
@@ -185,14 +265,12 @@ namespace BeastCustomization {
 			};
 			drawInfo.DrawDataCache.Add(item);
 
-			item = new(BeastCustomization.EyesScleraTexture, Position, Frame, adjustedScleraColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0) {
-				shader = GameShaders.Armor.GetShaderIdFromItemId(drawPlayer.dye[0].type)
-			};
+			item = new(BeastCustomization.EyesScleraTexture, Position, Frame, adjustedScleraColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0);
+			if (beastColorPlayer.eyesDye) item.shader = GameShaders.Armor.GetShaderIdFromItemId(drawPlayer.dye[0].type);
 			drawInfo.DrawDataCache.Add(item);
 
-			item = new(BeastCustomization.EyesIrisTexture, Position, Frame, adjustedIrisColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0) {
-				shader = GameShaders.Armor.GetShaderIdFromItemId(drawPlayer.dye[0].type)
-			};
+			item = new(BeastCustomization.EyesIrisTexture, Position, Frame, adjustedIrisColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0);
+			if (beastColorPlayer.eyesDye) item.shader = GameShaders.Armor.GetShaderIdFromItemId(drawPlayer.dye[0].type);
 			drawInfo.DrawDataCache.Add(item);
 		}
 	}
@@ -205,6 +283,7 @@ namespace BeastCustomization {
 			Player drawPlayer = drawInfo.drawPlayer;
 			BeastColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<BeastColorPlayer>();
 			Color adjustedFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor);
+			Color adjustedSecondaryFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2);
 			Color adjustedClawColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor);
 			if (drawInfo.usesCompositeTorso) {
 				Rectangle Frame = drawInfo.compTorsoFrame;
@@ -219,7 +298,7 @@ namespace BeastCustomization {
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = GameShaders.Armor.GetShaderIdFromItemId(drawPlayer.dye[1].type)
 				};
 				drawInfo.DrawDataCache.Add(item);
@@ -237,7 +316,7 @@ namespace BeastCustomization {
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = GameShaders.Armor.GetShaderIdFromItemId(drawPlayer.dye[1].type)
 				};
 				drawInfo.DrawDataCache.Add(item);
@@ -249,33 +328,38 @@ namespace BeastCustomization {
 			}
 		}
 	}
-	public class Arm_Layer : PlayerDrawLayer {
+	public class Arm_Layer_Back : PlayerDrawLayer {
 		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
 			return BeastColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
 		}
-		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.ArmOverItem, PlayerDrawLayers.HandOnAcc);
+		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.BalloonAcc, PlayerDrawLayers.Skin);
 		protected override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
 			BeastColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<BeastColorPlayer>();
 			Color adjustedFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor);
+			Color adjustedSecondaryFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2);
 			Color adjustedClawColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor);
 			if (drawInfo.usesCompositeTorso) {
-				Vector2 position = new Vector2((int)(drawInfo.Position.X - (drawInfo.drawPlayer.bodyFrame.Width / 2) + (drawInfo.drawPlayer.width / 2)), (int)(drawInfo.Position.Y + drawPlayer.height - drawPlayer.bodyFrame.Height + 4f)) + drawInfo.drawPlayer.bodyPosition + new Vector2(drawPlayer.bodyFrame.Width / 2, drawPlayer.bodyFrame.Height / 2) - Main.screenPosition;
+				Vector2 position = new Vector2((int)(drawInfo.Position.X - (drawInfo.drawPlayer.bodyFrame.Width / 2) + (drawInfo.drawPlayer.width / 2)), (int)(drawInfo.Position.Y + drawInfo.drawPlayer.height - drawInfo.drawPlayer.bodyFrame.Height + 4f)) + drawInfo.drawPlayer.bodyPosition + new Vector2(drawInfo.drawPlayer.bodyFrame.Width / 2, drawInfo.drawPlayer.bodyFrame.Height / 2) - Main.screenPosition;
 				Vector2 offset = Main.OffsetsPlayerHeadgear[drawInfo.drawPlayer.bodyFrame.Y / drawInfo.drawPlayer.bodyFrame.Height];
 				offset.Y -= 2f;
 				position += offset * -drawInfo.playerEffect.HasFlag(SpriteEffects.FlipVertically).ToDirectionInt();
-				position += drawInfo.frontShoulderOffset;
-				DrawData drawData = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], position, drawInfo.compFrontShoulderFrame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				Vector2 backArmOffset = new Vector2(6 * ((!drawInfo.playerEffect.HasFlag(SpriteEffects.FlipHorizontally)) ? 1 : -1), 2 * ((!drawInfo.playerEffect.HasFlag(SpriteEffects.FlipVertically)) ? 1 : -1));
+				position += backArmOffset;
+				Vector2 bodyVect = drawInfo.bodyVect + backArmOffset;
+				position += drawInfo.backShoulderOffset;
+				float rotation = drawPlayer.bodyRotation + drawInfo.compositeBackArmRotation;
+				DrawData drawData = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], position, drawInfo.compBackArmFrame, adjustedFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
 
-				drawData = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], position, drawInfo.compFrontShoulderFrame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				drawData = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], position, drawInfo.compBackArmFrame, adjustedSecondaryFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
 
-				drawData = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], position, drawInfo.compFrontShoulderFrame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				drawData = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], position, drawInfo.compBackArmFrame, adjustedClawColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
@@ -288,7 +372,72 @@ namespace BeastCustomization {
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+					shader = drawInfo.cBody
+				};
+				drawInfo.DrawDataCache.Add(item);
+
+				item = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+					shader = drawInfo.cBody
+				};
+				drawInfo.DrawDataCache.Add(item);
+			}
+		}
+	}
+	public class Arm_Layer_Front : PlayerDrawLayer {
+		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			return BeastColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
+		}
+		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.ArmOverItem, PlayerDrawLayers.HandOnAcc);
+		protected override void Draw(ref PlayerDrawSet drawInfo) {
+			Player drawPlayer = drawInfo.drawPlayer;
+			if (drawPlayer.controlUp) {
+
+			}
+			BeastColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<BeastColorPlayer>();
+			Color adjustedFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor);
+			Color adjustedSecondaryFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2);
+			Color adjustedClawColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor);
+			if (drawInfo.usesCompositeTorso) {
+
+				Vector2 position = new Vector2((int)(drawInfo.Position.X - Main.screenPosition.X - (float)(drawInfo.drawPlayer.bodyFrame.Width / 2) + (float)(drawInfo.drawPlayer.width / 2)), (int)(drawInfo.Position.Y - Main.screenPosition.Y + (float)drawInfo.drawPlayer.height - (float)drawInfo.drawPlayer.bodyFrame.Height + 4f)) + drawInfo.drawPlayer.bodyPosition + new Vector2(drawInfo.drawPlayer.bodyFrame.Width / 2, drawInfo.drawPlayer.bodyFrame.Height / 2);
+				Vector2 offset = Main.OffsetsPlayerHeadgear[drawInfo.drawPlayer.bodyFrame.Y / drawInfo.drawPlayer.bodyFrame.Height];
+				offset.Y -= 2f;
+				position += offset * -drawInfo.playerEffect.HasFlag(SpriteEffects.FlipVertically).ToDirectionInt();
+				position += drawInfo.frontShoulderOffset;
+				float rotation = drawInfo.drawPlayer.bodyRotation + drawInfo.compositeFrontArmRotation;
+				Vector2 bodyVect = drawInfo.bodyVect;
+				float offsetX = -5 * ((!drawInfo.playerEffect.HasFlag(SpriteEffects.FlipHorizontally)) ? 1 : (-1));
+				bodyVect.X += offsetX;
+				position.X += offsetX;
+				position += drawInfo.frontShoulderOffset;
+				if (drawInfo.compFrontArmFrame.X / drawInfo.compFrontArmFrame.Width >= 7) {
+					position += new Vector2((!drawInfo.playerEffect.HasFlag(SpriteEffects.FlipHorizontally)) ? 1 : -1, (!drawInfo.playerEffect.HasFlag(SpriteEffects.FlipVertically)) ? 1 : -1);
+				}
+				DrawData drawData = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], position, drawInfo.compFrontArmFrame, adjustedFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+					shader = drawInfo.cBody
+				};
+				drawInfo.DrawDataCache.Add(drawData);
+
+				drawData = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], position, drawInfo.compFrontArmFrame, adjustedSecondaryFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+					shader = drawInfo.cBody
+				};
+				drawInfo.DrawDataCache.Add(drawData);
+
+				drawData = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], position, drawInfo.compFrontArmFrame, adjustedClawColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+					shader = drawInfo.cBody
+				};
+				drawInfo.DrawDataCache.Add(drawData);
+			} else {
+				Rectangle Frame = drawPlayer.bodyFrame;
+
+				Vector2 Position = new Vector2((int)(drawInfo.Position.X - Main.screenPosition.X - Frame.Width / 2f + drawPlayer.width / 2f), (int)(drawInfo.Position.Y - Main.screenPosition.Y + drawPlayer.height - Frame.Height + 4f)) + drawPlayer.bodyPosition + drawInfo.bodyVect;
+				DrawData item = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+					shader = drawInfo.cBody
+				};
+				drawInfo.DrawDataCache.Add(item);
+
+				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
