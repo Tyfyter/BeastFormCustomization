@@ -1,3 +1,5 @@
+using log4net;
+using log4net.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
@@ -5,6 +7,7 @@ using ReLogic.Content;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -23,6 +26,11 @@ using Terraria.UI.Chat;
 
 namespace BeastCustomization {
 	public class BeastCustomization : Mod {
+#if DEBUG
+		public static ILog DebugLogger => ModContent.GetInstance<BeastCustomization>().Logger;
+#else
+		public static ILog DebugLogger => new Nonlogger();
+#endif
 		public static List<AutoCastingAsset<Texture2D>> HeadFurTextures { get; private set; }
 		public static AutoCastingAsset<Texture2D> EyesIrisTexture { get; private set; }
 		public static AutoCastingAsset<Texture2D> EyesScleraTexture { get; private set; }
@@ -86,6 +94,124 @@ namespace BeastCustomization {
 			_rightLock = null;
 			_rightHover = null;
 		}
+		public override void HandlePacket(BinaryReader reader, int whoAmI) {
+			byte mode = reader.ReadByte();
+			if (Main.netMode == NetmodeID.Server) {
+				switch (mode) {
+					case 0: {
+						DebugLogger.Info("server 0");
+						DebugLogger.Info(reader.BaseStream.Position);
+						short targetPlayer = reader.ReadInt16();
+						BeastColorPlayer syncPlayer = new();
+						syncPlayer.NetRecieve(reader);
+						ModPacket packet = GetPacket();
+						packet.Write((byte)0);
+						packet.Write((short)whoAmI);
+						syncPlayer.NetSend(packet);
+						DebugLogger.Info(packet.BaseStream.Position);
+						packet.Send(targetPlayer, whoAmI);
+						DebugLogger.Info(reader.BaseStream.Position);
+						break;
+					}
+				}
+			} else {
+				switch (mode) {
+					case 0:
+					DebugLogger.Info("client 0");
+					DebugLogger.Info(reader.BaseStream.Position);
+					short index = reader.ReadInt16();
+					Main.player[index].GetModPlayer<BeastColorPlayer>().NetRecieve(reader);
+					DebugLogger.Info(reader.BaseStream.Position);
+					break;
+
+					case 1:
+					DebugLogger.Info("client 1");
+					DebugLogger.Info(reader.BaseStream.Position);
+					Main.LocalPlayer.GetModPlayer<BeastColorPlayer>().SendData(reader.ReadInt16());
+					DebugLogger.Info(reader.BaseStream.Position);
+					break;
+				}
+			}
+			DebugLogger.Info($"netmode: {Main.netMode} mode: {mode}");
+		}
+	}
+	internal class Nonlogger : ILog {
+		public bool IsDebugEnabled { get; }
+		public bool IsInfoEnabled { get; }
+		public bool IsWarnEnabled { get; }
+		public bool IsErrorEnabled { get; }
+		public bool IsFatalEnabled { get; }
+		public ILogger Logger { get; }
+
+		public void Debug(object message) {}
+
+		public void Debug(object message, Exception exception) {}
+
+		public void DebugFormat(string format, params object[] args) {}
+
+		public void DebugFormat(string format, object arg0) {}
+
+		public void DebugFormat(string format, object arg0, object arg1) {}
+
+		public void DebugFormat(string format, object arg0, object arg1, object arg2) {}
+
+		public void DebugFormat(IFormatProvider provider, string format, params object[] args) {}
+
+		public void Error(object message) {}
+
+		public void Error(object message, Exception exception) {}
+
+		public void ErrorFormat(string format, params object[] args) {}
+
+		public void ErrorFormat(string format, object arg0) {}
+
+		public void ErrorFormat(string format, object arg0, object arg1) {}
+
+		public void ErrorFormat(string format, object arg0, object arg1, object arg2) {}
+
+		public void ErrorFormat(IFormatProvider provider, string format, params object[] args) {}
+
+		public void Fatal(object message) {}
+
+		public void Fatal(object message, Exception exception) {}
+
+		public void FatalFormat(string format, params object[] args) {}
+
+		public void FatalFormat(string format, object arg0) {}
+
+		public void FatalFormat(string format, object arg0, object arg1) {}
+
+		public void FatalFormat(string format, object arg0, object arg1, object arg2) {}
+
+		public void FatalFormat(IFormatProvider provider, string format, params object[] args) {}
+
+		public void Info(object message) {}
+
+		public void Info(object message, Exception exception) {}
+
+		public void InfoFormat(string format, params object[] args) {}
+
+		public void InfoFormat(string format, object arg0) {}
+
+		public void InfoFormat(string format, object arg0, object arg1) {}
+
+		public void InfoFormat(string format, object arg0, object arg1, object arg2) {}
+
+		public void InfoFormat(IFormatProvider provider, string format, params object[] args) {}
+
+		public void Warn(object message) {}
+
+		public void Warn(object message, Exception exception) {}
+
+		public void WarnFormat(string format, params object[] args) {}
+
+		public void WarnFormat(string format, object arg0) {}
+
+		public void WarnFormat(string format, object arg0, object arg1) {}
+
+		public void WarnFormat(string format, object arg0, object arg1, object arg2) {}
+
+		public void WarnFormat(IFormatProvider provider, string format, params object[] args) {}
 	}
 	public struct AutoCastingAsset<T> where T : class {
 		public bool IsLoaded => asset?.IsLoaded ?? false;

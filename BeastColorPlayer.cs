@@ -3,15 +3,18 @@ using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Terraria;
+using Terraria.Chat;
 using Terraria.DataStructures;
 using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
 using Terraria.Graphics.Shaders;
 using Terraria.ID;
+using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.IO;
@@ -123,6 +126,7 @@ namespace BeastCustomization {
 				furColor = oldFurColor;
 				furColor2 = oldFurColor2;
 				clawsColor = oldClawsColor;
+				SendData();
 			}
 		}
 		int GetSlot(int slotNum) {
@@ -190,6 +194,75 @@ namespace BeastCustomization {
 		public override void LoadData(TagCompound tag) {
 			ImportData(tag);
 			if (tag.TryGet("SavedPresets", out List<TagCompound> tempPresets)) Presets = tempPresets;
+		}
+		public override void OnEnterWorld(Player player) {
+			SendData();
+		}
+		public override void SyncPlayer(int toWho, int fromWho, bool newPlayer) {
+			if (newPlayer) {
+				SendData();
+			} else if (fromWho == -1) {
+				ModPacket packet = Mod.GetPacket();
+				packet.Write((byte)1);
+				packet.Write((short)toWho);
+				BeastCustomization.DebugLogger.Info("SyncPlayer");
+				BeastCustomization.DebugLogger.Info(packet.BaseStream.Position);
+				packet.Send(Player.whoAmI, -1);
+			}
+		}
+		internal void SendData(short toWho = -1) {
+			if (Main.netMode == NetmodeID.SinglePlayer) return;
+			ModPacket packet = Mod.GetPacket();
+			packet.Write((byte)0);
+			packet.Write((short)toWho);
+			NetSend(packet);
+			BeastCustomization.DebugLogger.Info("SendData");
+			BeastCustomization.DebugLogger.Info(packet.BaseStream.Position);
+			packet.Send(toWho, Player.whoAmI);
+		}
+		public void NetSend(BinaryWriter writer) {
+			BeastCustomization.DebugLogger.Info("NetSend");
+			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
+			writer.Write(headFurStyle);
+			writer.Write(headTeethStyle);
+			writer.Write(bodyFurStyle);
+			writer.Write(bodySecondaryFurStyle);
+			writer.Write(bodyClawsStyle);
+			writer.Write(legsFurStyle);
+			writer.Write(legsClawsStyle);
+
+			writer.Write(eyesGlow);
+			writer.Write(eyesDye);
+
+			writer.Write(eyesIrisColor.PackedValue);
+			writer.Write(eyesScleraColor.PackedValue);
+			writer.Write(headTeethColor.PackedValue);
+			writer.Write(furColor.PackedValue);
+			writer.Write(furColor2.PackedValue);
+			writer.Write(clawsColor.PackedValue);
+			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
+		}
+		public void NetRecieve(BinaryReader reader) {
+			BeastCustomization.DebugLogger.Info("NetRecieve");
+			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
+			headFurStyle = reader.ReadInt32();
+			headTeethStyle = reader.ReadInt32();
+			bodyFurStyle = reader.ReadInt32();
+			bodySecondaryFurStyle = reader.ReadInt32();
+			bodyClawsStyle = reader.ReadInt32();
+			legsFurStyle = reader.ReadInt32();
+			legsClawsStyle = reader.ReadInt32();
+
+			eyesGlow = reader.ReadBoolean();
+			eyesDye = reader.ReadBoolean();
+
+			eyesIrisColor.PackedValue = reader.ReadUInt32();
+			eyesScleraColor.PackedValue = reader.ReadUInt32();
+			headTeethColor.PackedValue = reader.ReadUInt32();
+			furColor.PackedValue = reader.ReadUInt32();
+			furColor2.PackedValue = reader.ReadUInt32();
+			clawsColor.PackedValue = reader.ReadUInt32();
+			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 		}
 		internal Tuple<UIButton, TagCompound, string> renamingPreset;
 		public override void PreUpdate() {
