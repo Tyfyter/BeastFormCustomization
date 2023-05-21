@@ -1,3 +1,1 @@
 Allows you to customize your coloration with the moon charm and its upgrades equipped.
-
-Known bugs: upon joining a multiplayer server customization is not synced to players already in the server, opening the customization menu will fix this

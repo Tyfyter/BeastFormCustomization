@@ -47,6 +47,7 @@ namespace BeastCustomization {
 		public static ModKeybind OpenMenuHotkey { get; private set; }
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightLock;
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightHover;
+		internal static HashSet<int> modMoonCharms;
 		public override void Load() {
 			if (Main.netMode != NetmodeID.Server) {
 				HeadFurTextures = new();
@@ -77,6 +78,7 @@ namespace BeastCustomization {
 			OpenMenuHotkey = KeybindLoader.RegisterKeybind(this, "Open Customization Menu", "NumPad7");
 			_rightLock = new("rightLock", BindingFlags.NonPublic | BindingFlags.Static, true);
 			_rightHover = new("rightHover", BindingFlags.NonPublic | BindingFlags.Static, true);
+			modMoonCharms = new();
 		}
 		public override void Unload() {
 			HeadFurTextures = null;
@@ -93,6 +95,7 @@ namespace BeastCustomization {
 			OpenMenuHotkey = null;
 			_rightLock = null;
 			_rightHover = null;
+			modMoonCharms = null;
 		}
 		public override void HandlePacket(BinaryReader reader, int whoAmI) {
 			byte mode = reader.ReadByte();
@@ -398,7 +401,7 @@ namespace BeastCustomization {
 			}
 			int i = 0;
 			const float marginedButtonHeight = 52 + 8;
-			void AddButton(TagCompound item, int index) {
+			void AddButton(TagCompound item, int index, bool inConfig) {
 				string name = item.TryGet("presetName", out string presetName) ? presetName : ("Preset #" + index);
 				UIButton applyButton = new UIButton() {
 					Text = name,
@@ -445,7 +448,14 @@ namespace BeastCustomization {
 				deleteButton.OnClick += (el) => {
 					if (el.Confirm(Language.GetTextValue("CLI.DeleteConfirmation", name))) {
 						float ownTop = el.Parent.Top.Pixels;
-						beastPlayer.Presets.Remove(item);
+						List<TagCompound> currentLocation;
+						if (inConfig) {
+							currentLocation = BeastCustomizationSavedPresets.Instance.presets;
+						} else {
+							currentLocation = beastPlayer.Presets;
+						}
+						currentLocation.Remove(item);
+						if (inConfig) BeastCustomizationSavedPresets.Instance.Save();
 						totalHeight -= marginedButtonHeight;
 						var grandparent = el.Parent.Parent;
 						foreach (var sibling in grandparent.Children) {
@@ -460,14 +470,55 @@ namespace BeastCustomization {
 						grandparent.RecalculateChildren();
 					}
 				};
+
+				UIButton moveButton = new UIButton(15, 600) {
+					Text = $"Move to {(inConfig ? "Player" : "Config")}",
+					Left = new(8, 0),
+					Top = new(0, 0),
+					Scale = 1.15f
+				};
+				moveButton.OnClick += (el) => {
+					float ownTop = el.Parent.Top.Pixels;
+					BeastCustomizationSavedPresets.Instance.presets ??= new();
+					List<TagCompound> currentLocation;
+					List<TagCompound> newLocation;
+					if (inConfig) {
+						currentLocation = BeastCustomizationSavedPresets.Instance.presets;
+						newLocation = beastPlayer.Presets;
+					} else {
+						currentLocation = beastPlayer.Presets;
+						newLocation = BeastCustomizationSavedPresets.Instance.presets;
+					}
+					try {
+						currentLocation.Remove(item);
+					} finally {
+						newLocation.Add(item);
+						BeastCustomizationSavedPresets.Instance.Save();
+					}
+					totalHeight -= marginedButtonHeight;
+					var grandparent = el.Parent.Parent;
+					foreach (var sibling in grandparent.Children) {
+						if (sibling.Top.Pixels > ownTop) {
+							sibling.Top.Pixels -= marginedButtonHeight;
+						}
+					}
+
+					if (el.Parent is UIPresetWrapper wrapper) {
+						wrapper.Remove();
+					}
+
+					AddButton(item, index, !inConfig);
+					grandparent.RecalculateChildren();
+				};
 				if (index == -1) {
 					renameButton = null;
 					deleteButton = null;
+					moveButton = null;
 				}
 				//renameButton.Append(deleteButton);
 				//applyButton.Append(renameButton);
 				//Append(applyButton);
-				var presetWrapper = new UIPresetWrapper(applyButton, renameButton, overwriteButton, deleteButton) {
+				var presetWrapper = new UIPresetWrapper(applyButton, renameButton, overwriteButton, deleteButton, moveButton) {
 					Top = new(totalHeight, 0)
 				};
 				this.Append(presetWrapper);
@@ -476,7 +527,12 @@ namespace BeastCustomization {
 				totalHeight += marginedButtonHeight;
 			}
 			foreach (var item in beastPlayer.Presets) {
-				AddButton(item, ++i);
+				AddButton(item, ++i, false);
+			}
+			i = 0;
+			BeastCustomizationSavedPresets.Instance.presets ??= new();
+			foreach (var item in BeastCustomizationSavedPresets.Instance.presets) {
+				AddButton(item, ++i, true);
 			}
 
 			UIButton saveButton = new UIButton() {
@@ -490,8 +546,8 @@ namespace BeastCustomization {
 				beastPlayer.ExportData(tag);
 				tag.Remove("SavedPresets");
 				beastPlayer.Presets.Add(tag);
-				AddButton(tag, ++i);
-				el.Top.Pixels += marginedButtonHeight;
+				AddButton(tag, ++i, false);
+				//el.Top.Pixels += marginedButtonHeight;
 				el.Recalculate();
 			};
 			Append(saveButton);
@@ -500,7 +556,7 @@ namespace BeastCustomization {
 			TagCompound defaultTag = new();
 			new BeastColorPlayer().ExportData(defaultTag);
 			defaultTag["presetName"] = "Default";
-			AddButton(defaultTag, -1);
+			AddButton(defaultTag, -1, false);
 
 			Width.Set(0, 1);
 			Height.Set(0, 1);
@@ -603,11 +659,13 @@ namespace BeastCustomization {
 		UIButton renameButton;
 		UIButton overwriteButton;
 		UIButton deleteButton;
-		public UIPresetWrapper(UIButton applyButton, UIButton renameButton, UIButton overwriteButton, UIButton deleteButton) {
+		UIButton moveButton;
+		public UIPresetWrapper(UIButton applyButton, UIButton renameButton, UIButton overwriteButton, UIButton deleteButton, UIButton moveButton) {
 			this.applyButton = applyButton;
 			this.renameButton = renameButton;
 			this.overwriteButton = overwriteButton;
 			this.deleteButton = deleteButton;
+			this.moveButton = moveButton;
 		}
 		public override void OnInitialize() {
 			Width.Percent = 1;
@@ -618,6 +676,7 @@ namespace BeastCustomization {
 				Append(renameButton);
 				Append(overwriteButton);
 				Append(deleteButton);
+				Append(moveButton);
 			}
 		}
 		public override void Update(GameTime gameTime) {
@@ -635,12 +694,21 @@ namespace BeastCustomization {
 					deleteButton.Left.Pixels = overwriteButton.Left.Pixels + overwriteButton.Width.Pixels + 8;
 					changed = true;
 				}
+
 				oldLeft = deleteButton.Left.Pixels;
 				newLeft = overwriteButton.Left.Pixels + overwriteButton.Width.Pixels + 8;
 				if (newLeft != oldLeft) {
 					deleteButton.Left.Pixels = newLeft;
 					changed = true;
 				}
+
+				oldLeft = moveButton.Left.Pixels;
+				newLeft = deleteButton.Left.Pixels + deleteButton.Width.Pixels + 8;
+				if (newLeft != oldLeft) {
+					moveButton.Left.Pixels = newLeft;
+					changed = true;
+				}
+
 				if (changed) {
 					Recalculate();
 				}
@@ -708,6 +776,35 @@ namespace BeastCustomization {
 			gen.Emit(OpCodes.Ret);
 
 			return (Action<TParent, T>)setterMethod.CreateDelegate(typeof(Action<TParent, T>));
+		}
+	}
+	public class BeastCustomizationSavedPresets : ModConfig {
+		public override ConfigScope Mode => ConfigScope.ClientSide;
+		public static BeastCustomizationSavedPresets Instance;
+		[Tooltip("this shouldn't be edited here")]
+		[JsonIgnore]
+		internal List<TagCompound> presets;
+		[Tooltip("this shouldn't be edited here")]
+		public List<Dictionary<string, object>> Presets {
+			get => (presets??=new()).Select(item => new Dictionary<string, object>(item)).ToList();
+			set {
+				List<TagCompound> _presets = new(value.Count);
+				foreach (Dictionary<string, object> item in value) {
+					TagCompound tag = new();
+					foreach (KeyValuePair<string, object> keyValuePair in item) {
+						tag.Add(keyValuePair);
+					}
+					_presets.Add(tag);
+				}
+				presets = _presets;
+			}
+		}
+		internal void Save() {
+			Directory.CreateDirectory(ConfigManager.ModConfigPath);
+			string filename = Mod.Name + "_" + Name + ".json";
+			string path = Path.Combine(ConfigManager.ModConfigPath, filename);
+			string json = JsonConvert.SerializeObject(this, ConfigManager.serializerSettings);
+			File.WriteAllText(path, json);
 		}
 	}
 }
