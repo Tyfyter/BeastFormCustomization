@@ -13,7 +13,9 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Terraria;
 using Terraria.Audio;
+using Terraria.DataStructures;
 using Terraria.GameContent;
+using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.Localization;
@@ -31,45 +33,22 @@ namespace BeastCustomization {
 #else
 		public static ILog DebugLogger => new Nonlogger();
 #endif
-		public static List<AutoCastingAsset<Texture2D>> HeadFurTextures { get; private set; }
-		public static AutoCastingAsset<Texture2D> EyesIrisTexture { get; private set; }
-		public static AutoCastingAsset<Texture2D> EyesScleraTexture { get; private set; }
-		public static List<AutoCastingAsset<Texture2D>> HeadTeethTextures { get; private set; }
-		public static List<AutoCastingAsset<Texture2D>> BodyFurTextures { get; private set; }
-		public static List<AutoCastingAsset<Texture2D>> BodySecondaryFurTextures { get; private set; }
-		public static List<AutoCastingAsset<Texture2D>> BodyClawsTextures { get; private set; }
-		public static List<AutoCastingAsset<Texture2D>> LegsFurTextures { get; private set; }
-		public static List<AutoCastingAsset<Texture2D>> LegsClawsTextures { get; private set; }
+		static BeastCustomization Instance => ModContent.GetInstance<BeastCustomization>();
 		public static AutoCastingAsset<Texture2D> SelectorEndTexture { get; private set; }
 		public static AutoCastingAsset<Texture2D> SelectorMidTexture { get; private set; }
 		public static AutoCastingAsset<Texture2D> ButtonEndTexture { get; private set; }
 		public static AutoCastingAsset<Texture2D> ButtonMidTexture { get; private set; }
+		static List<int> beastPlayers;
+		public static List<int> BeastPlayers {
+			get => beastPlayers ??= new();
+			private set => beastPlayers = value;
+		}
 		public static ModKeybind OpenMenuHotkey { get; private set; }
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightLock;
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightHover;
 		internal static HashSet<int> modMoonCharms;
 		public override void Load() {
 			if (Main.netMode != NetmodeID.Server) {
-				HeadFurTextures = new();
-				HeadTeethTextures = new();
-				BodyFurTextures = new();
-				BodySecondaryFurTextures = new();
-				BodyClawsTextures = new();
-				LegsFurTextures = new();
-				LegsClawsTextures = new();
-				HeadFurTextures.Add(Assets.Request<Texture2D>("Textures/Head_Fur"));
-				HeadFurTextures.Add(Assets.Request<Texture2D>("Textures/Head_Fur_2"));
-				EyesIrisTexture = Assets.Request<Texture2D>("Textures/Head_Eyes_Iris");
-				EyesScleraTexture = Assets.Request<Texture2D>("Textures/Head_Eyes_White");
-				HeadTeethTextures.Add(Assets.Request<Texture2D>("Textures/Head_Teeth"));
-				BodyFurTextures.Add(Assets.Request<Texture2D>("Textures/Body_Fur"));
-				BodyFurTextures.Add(Assets.Request<Texture2D>("Textures/Body_Fur_2"));
-				BodySecondaryFurTextures.Add(Assets.Request<Texture2D>("Textures/Body_Secondary_Fur_0"));
-				BodySecondaryFurTextures.Add(Assets.Request<Texture2D>("Textures/Body_Secondary_Fur_1"));
-				BodyClawsTextures.Add(Assets.Request<Texture2D>("Textures/Body_Claws"));
-				LegsFurTextures.Add(Assets.Request<Texture2D>("Textures/Legs_Fur"));
-				LegsFurTextures.Add(Assets.Request<Texture2D>("Textures/Legs_Fur_2"));
-				LegsClawsTextures.Add(Assets.Request<Texture2D>("Textures/Legs_Claws"));
 				SelectorEndTexture = Assets.Request<Texture2D>("Textures/UI/Selector_Back_End");
 				SelectorMidTexture = Assets.Request<Texture2D>("Textures/UI/Selector_Back_Mid");
 				ButtonEndTexture = Assets.Request<Texture2D>("Textures/UI/Button_Back_End");
@@ -81,13 +60,7 @@ namespace BeastCustomization {
 			modMoonCharms = new();
 		}
 		public override void Unload() {
-			HeadFurTextures = null;
-			HeadTeethTextures = null;
-			BodyFurTextures = null;
-			BodySecondaryFurTextures = null;
-			BodyClawsTextures = null;
-			LegsFurTextures = null;
-			LegsClawsTextures = null;
+			BeastPlayers = null;
 			SelectorEndTexture = null;
 			SelectorMidTexture = null;
 			ButtonEndTexture = null;
@@ -97,45 +70,43 @@ namespace BeastCustomization {
 			_rightHover = null;
 			modMoonCharms = null;
 		}
+		public static void FillSpriteList(List<AutoCastingAsset<Texture2D>> list, string baseName) {
+			int i = 1;
+			while (Instance.RequestAssetIfExists($"{baseName}_{i}", out Asset<Texture2D> sprite)) {
+				list.Add(sprite);
+				i++;
+			}
+		}
 		public override void HandlePacket(BinaryReader reader, int whoAmI) {
 			byte mode = reader.ReadByte();
 			if (Main.netMode == NetmodeID.Server) {
 				switch (mode) {
 					case 0: {
-						DebugLogger.Info("server 0");
-						DebugLogger.Info(reader.BaseStream.Position);
 						short targetPlayer = reader.ReadInt16();
-						BeastColorPlayer syncPlayer = new();
+						WolfColorPlayer syncPlayer = new();
+						ushort beastPlayerIndex = reader.ReadUInt16();
 						syncPlayer.NetRecieve(reader);
+
 						ModPacket packet = GetPacket();
 						packet.Write((byte)0);
 						packet.Write((short)whoAmI);
+						packet.Write(beastPlayerIndex);
 						syncPlayer.NetSend(packet);
-						DebugLogger.Info(packet.BaseStream.Position);
 						packet.Send(targetPlayer, whoAmI);
-						DebugLogger.Info(reader.BaseStream.Position);
 						break;
 					}
 				}
 			} else {
 				switch (mode) {
 					case 0:
-					DebugLogger.Info("client 0");
-					DebugLogger.Info(reader.BaseStream.Position);
-					short index = reader.ReadInt16();
-					Main.player[index].GetModPlayer<BeastColorPlayer>().NetRecieve(reader);
-					DebugLogger.Info(reader.BaseStream.Position);
+					(Main.player[reader.ReadInt16()].ModPlayers[BeastPlayers[reader.ReadUInt16()]] as BeastPlayerBase).NetRecieve(reader);
 					break;
 
 					case 1:
-					DebugLogger.Info("client 1");
-					DebugLogger.Info(reader.BaseStream.Position);
-					Main.LocalPlayer.GetModPlayer<BeastColorPlayer>().SendData(reader.ReadInt16());
-					DebugLogger.Info(reader.BaseStream.Position);
+					(Main.LocalPlayer.ModPlayers[BeastPlayers[reader.ReadUInt16()]] as BeastPlayerBase).SendData(reader.ReadInt16());
 					break;
 				}
 			}
-			DebugLogger.Info($"netmode: {Main.netMode} mode: {mode}");
 		}
 	}
 	internal class Nonlogger : ILog {
@@ -229,11 +200,15 @@ namespace BeastCustomization {
 	}
 
 	public class CustomizationMenuState : UIState {
+		readonly int index;
+		public CustomizationMenuState(int index) : base() {
+			this.index = index;
+		}
 		public override void OnInitialize() {
 			Main.UIScaleMatrix.Decompose(out Vector3 scale, out Quaternion _, out Vector3 _);
-			CustomizationMenu customizationMenu = new CustomizationMenu();
+			CustomizationMenu customizationMenu = new CustomizationMenu(index);
 			Append(customizationMenu);
-			PresetsMenu presetsMenu = new PresetsMenu();
+			PresetsMenu presetsMenu = new PresetsMenu(index);
 			presetsMenu.Left.Pixels += 416f * scale.X;
 			Append(presetsMenu);
 		}
@@ -242,6 +217,10 @@ namespace BeastCustomization {
 		public float totalHeight;
 		CustomizationMenuList listWrapper;
 		CustomizationMenuList listWrapper2;
+		readonly int index;
+		public CustomizationMenu(int index) : base() {
+			this.index = index;
+		}
 		public override void OnActivate() {
 			SoundEngine.PlaySound(SoundID.MenuOpen);
 		}
@@ -252,7 +231,7 @@ namespace BeastCustomization {
 			totalHeight = 39 * scale.Y;
 			UIElement element;
 			int top = 6;
-			BeastColorPlayer beastPlayer = Main.LocalPlayer.GetModPlayer<BeastColorPlayer>();
+			BeastPlayerBase beastPlayer = Main.LocalPlayer.ModPlayers[BeastCustomization.BeastPlayers[index]] as BeastPlayerBase;
 			if (beastPlayer is null) {
 				this.Deactivate();
 				Remove();
@@ -271,7 +250,7 @@ namespace BeastCustomization {
 			for (int i = 0; i < settingList.Length; i++) {
 				int sliderMax = -1;
 				if (settingList[i].MemberInfo.GetCustomAttribute<ListRangeAttribute>() is ListRangeAttribute rangeAttribute) {
-					sliderMax = ((IList)typeof(BeastCustomization).
+					sliderMax = ((IList)beastPlayer.ResourceCacheType.
 						GetProperty(rangeAttribute.ListName, BindingFlags.Public | BindingFlags.Static)
 						.GetValue(null)).Count;
 				}
@@ -356,7 +335,7 @@ namespace BeastCustomization {
 		}
 
 		public override void OnDeactivate() {
-			Main.LocalPlayer.GetModPlayer<BeastColorPlayer>().FinishCustomization(false);
+			(Main.LocalPlayer.ModPlayers[BeastCustomization.BeastPlayers[index]] as BeastPlayerBase).FinishCustomization(false);
 		}
 		public override void ScrollWheel(UIScrollWheelEvent evt) {
 			listWrapper.Top.Pixels = MathHelper.Clamp(listWrapper.Top.Pixels + evt.ScrollWheelValue, (Main.screenHeight - (52 + 16)) - listWrapper.Height.Pixels, 0);
@@ -389,11 +368,15 @@ namespace BeastCustomization {
 	}
 	public class PresetsMenu : UIElement {
 		float totalHeight = 8;
+		readonly int index;
+		public PresetsMenu(int index) : base() {
+			this.index = index;
+		}
 		public override void OnInitialize() {
 			if (!(Elements is null)) Elements.Clear();
 			Top.Pixels = 0;
 			Main.UIScaleMatrix.Decompose(out Vector3 scale, out Quaternion _, out Vector3 _);
-			BeastColorPlayer beastPlayer = Main.LocalPlayer.GetModPlayer<BeastColorPlayer>();
+			BeastPlayerBase beastPlayer = Main.LocalPlayer.ModPlayers[BeastCustomization.BeastPlayers[index]] as BeastPlayerBase;
 			if (beastPlayer is null) {
 				this.Deactivate();
 				Remove();
@@ -423,7 +406,7 @@ namespace BeastCustomization {
 					Scale = 1.15f
 				};
 				renameButton.OnClick += (el) => {
-					beastPlayer.renamingPreset = new(applyButton, item, name);
+					Main.LocalPlayer.GetModPlayer<SharedModPlayer>().renamingPreset = new(applyButton, item, name);
 				};
 
 				UIButton overwriteButton = new UIButton(15, 600) {
@@ -436,6 +419,7 @@ namespace BeastCustomization {
 					if (el.Confirm(Language.GetTextValue("CLI.DeleteConfirmation", name)
 						.Replace(Language.GetTextValue("UI.Delete").ToLower(), "overwrite"), "Overwritten", 300)) {
 						beastPlayer.ExportData(item);
+						//if (inConfig) BeastCustomizationSavedPresets.Instance.Save();
 					}
 				};
 
@@ -450,7 +434,7 @@ namespace BeastCustomization {
 						float ownTop = el.Parent.Top.Pixels;
 						List<TagCompound> currentLocation;
 						if (inConfig) {
-							currentLocation = BeastCustomizationSavedPresets.Instance.presets;
+							currentLocation = beastPlayer.ConfigPresets;
 						} else {
 							currentLocation = beastPlayer.Presets;
 						}
@@ -479,15 +463,15 @@ namespace BeastCustomization {
 				};
 				moveButton.OnClick += (el) => {
 					float ownTop = el.Parent.Top.Pixels;
-					BeastCustomizationSavedPresets.Instance.presets ??= new();
+					beastPlayer.ConfigPresets ??= new();
 					List<TagCompound> currentLocation;
 					List<TagCompound> newLocation;
 					if (inConfig) {
-						currentLocation = BeastCustomizationSavedPresets.Instance.presets;
+						currentLocation = beastPlayer.ConfigPresets;
 						newLocation = beastPlayer.Presets;
 					} else {
 						currentLocation = beastPlayer.Presets;
-						newLocation = BeastCustomizationSavedPresets.Instance.presets;
+						newLocation = beastPlayer.ConfigPresets;
 					}
 					try {
 						currentLocation.Remove(item);
@@ -530,8 +514,8 @@ namespace BeastCustomization {
 				AddButton(item, ++i, false);
 			}
 			i = 0;
-			BeastCustomizationSavedPresets.Instance.presets ??= new();
-			foreach (var item in BeastCustomizationSavedPresets.Instance.presets) {
+			beastPlayer.ConfigPresets ??= new();
+			foreach (var item in beastPlayer.ConfigPresets) {
 				AddButton(item, ++i, true);
 			}
 
@@ -554,12 +538,94 @@ namespace BeastCustomization {
 			totalHeight += marginedButtonHeight;
 
 			TagCompound defaultTag = new();
-			new BeastColorPlayer().ExportData(defaultTag);
+			beastPlayer.CreateNew().ExportData(defaultTag);
 			defaultTag["presetName"] = "Default";
 			AddButton(defaultTag, -1, false);
 
 			Width.Set(0, 1);
 			Height.Set(0, 1);
+		}
+	}
+	public class CustomizationMenuSelectorState : UIState {
+		public override void OnInitialize() {
+			CustomizationMenuSelector presetsMenu = new CustomizationMenuSelector();
+			Append(presetsMenu);
+		}
+	}
+	public class CustomizationMenuSelector : UIElement {
+		float totalHeight = 8;
+		public override void OnInitialize() {
+			if (!(Elements is null)) Elements.Clear();
+			Top.Pixels = 0;
+			Main.UIScaleMatrix.Decompose(out Vector3 scale, out Quaternion _, out Vector3 _);
+			const float marginedButtonHeight = 52 + 8;
+			void AddButton(string name, int index) {
+				UIButton button = new UIButton() {
+					Text = name,
+					Left = new(8, 0),
+					Top = new(totalHeight, 0),
+					Scale = 1.15f
+				};
+				button.OnClick += (el) => {
+					IngameFancyUI.OpenUIState(new CustomizationMenuState(index));
+				};
+
+				this.Append(button);
+				Recalculate();
+				totalHeight += marginedButtonHeight;
+			}
+			for (int i = 0; i < BeastCustomization.BeastPlayers.Count; i++) {
+				AddButton((Main.LocalPlayer.ModPlayers[BeastCustomization.BeastPlayers[i]] as BeastPlayerBase).DisplayName, i);
+			}
+
+			Width.Set(0, 1);
+			Height.Set(0, 1);
+		}
+	}
+	public sealed class SharedModPlayer : ModPlayer {
+		public override void HideDrawLayers(PlayerDrawSet drawInfo) {
+			if (BeastCustomization.OpenMenuHotkey.JustPressed) {
+				if (BeastCustomizationConfig.Instance.openToActive) {
+					BeastPlayerBase selected = null;
+					int specificity = 0;
+					foreach (int i in BeastCustomization.BeastPlayers) {
+						if (Main.LocalPlayer.ModPlayers[i] is BeastPlayerBase beastPlayer && beastPlayer.IsActive && beastPlayer.Specificity > specificity) {
+							selected = beastPlayer;
+							specificity = beastPlayer.Specificity;
+						}
+					}
+					if (specificity > 0) {
+						IngameFancyUI.OpenUIState(new CustomizationMenuState(selected.ModIndex));
+						return;
+					}
+				}
+				IngameFancyUI.OpenUIState(new CustomizationMenuSelectorState());
+			}
+		}
+		internal Tuple<UIButton, TagCompound, string> renamingPreset;
+		public override void PreUpdate() {
+			if (renamingPreset is not null) {
+				if (!IngameFancyUI.CanShowVirtualKeyboard(2) || UIVirtualKeyboard.KeyboardContext != 2) {
+					string text = renamingPreset.Item1.Text;
+					string oldText = text;
+					if (text == " ") text = "";
+					PlayerInput.WritingText = true;
+					Main.instance.HandleIME();
+					text = Main.GetInputText(text);
+					if (text == "") text = " ";
+					if (text != oldText) {
+						renamingPreset.Item1.Text = text;
+					}
+					if (Main.inputTextEnter) {
+						renamingPreset.Item2["presetName"] = text;
+						renamingPreset = null;
+					} else if (Main.inputTextEscape) {
+						renamingPreset.Item1.Text = renamingPreset.Item3;
+						renamingPreset = null;
+					}
+				}
+				Main.editSign = true;
+			}
 		}
 	}
 	public class UIButton : UIElement {
@@ -778,26 +844,46 @@ namespace BeastCustomization {
 			return (Action<TParent, T>)setterMethod.CreateDelegate(typeof(Action<TParent, T>));
 		}
 	}
+	public class BeastCustomizationConfig : ModConfig {
+		public override ConfigScope Mode => ConfigScope.ClientSide;
+		public static BeastCustomizationConfig Instance;
+		[Label("Open to active form")]
+		[Tooltip("Whether or not the keybind will skip the selection menu and directly open the current form's menu\n(when applicable)")]
+		public bool openToActive = true;
+	}
 	public class BeastCustomizationSavedPresets : ModConfig {
 		public override ConfigScope Mode => ConfigScope.ClientSide;
 		public static BeastCustomizationSavedPresets Instance;
 		[Tooltip("this shouldn't be edited here")]
 		[JsonIgnore]
-		internal List<TagCompound> presets;
+		internal List<TagCompound> wolfPresets;
 		[Tooltip("this shouldn't be edited here")]
-		public List<Dictionary<string, object>> Presets {
-			get => (presets??=new()).Select(item => new Dictionary<string, object>(item)).ToList();
+		public List<Dictionary<string, object>> WolfPresets {
+			get => (wolfPresets ??= new()).Select(item => new Dictionary<string, object>(item)).ToList();
 			set {
-				List<TagCompound> _presets = new(value.Count);
-				foreach (Dictionary<string, object> item in value) {
-					TagCompound tag = new();
-					foreach (KeyValuePair<string, object> keyValuePair in item) {
-						tag.Add(keyValuePair);
-					}
-					_presets.Add(tag);
-				}
-				presets = _presets;
+				wolfPresets = ReadJSON(value);
 			}
+		}
+		[Tooltip("this shouldn't be edited here")]
+		[JsonIgnore]
+		internal List<TagCompound> fishPresets;
+		[Tooltip("this shouldn't be edited here")]
+		public List<Dictionary<string, object>> FishPresets {
+			get => (fishPresets ??= new()).Select(item => new Dictionary<string, object>(item)).ToList();
+			set {
+				fishPresets = ReadJSON(value);
+			}
+		}
+		public static List<TagCompound> ReadJSON(List<Dictionary<string, object>> value) {
+			List<TagCompound> _presets = new(value.Count);
+			foreach (Dictionary<string, object> item in value) {
+				TagCompound tag = new();
+				foreach (KeyValuePair<string, object> keyValuePair in item) {
+					tag.Add(keyValuePair);
+				}
+				_presets.Add(tag);
+			}
+			return _presets;
 		}
 		internal void Save() {
 			Directory.CreateDirectory(ConfigManager.ModConfigPath);

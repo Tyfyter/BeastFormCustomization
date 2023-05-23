@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using BeastCustomization.Textures;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
 using System;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using Terraria;
 using Terraria.Chat;
 using Terraria.DataStructures;
+using Terraria.GameContent;
 using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
 using Terraria.Graphics.Shaders;
@@ -21,7 +23,9 @@ using Terraria.ModLoader.IO;
 using Terraria.UI;
 
 namespace BeastCustomization {
-	public class BeastColorPlayer : ModPlayer {
+	[LegacyName("BeastColorPlayer")]
+	public class WolfColorPlayer : BeastPlayerBase {
+		#region fields
 		[Label("Head Fur Style")]
 		[ListRange("HeadFurTextures"), Slider]
 		public int headFurStyle = 1;
@@ -68,6 +72,21 @@ namespace BeastCustomization {
 		[Label("Apply Leg Armor")]
 		public bool applyLegs = false;
 
+		//[JsonIgnore]
+		[Label("Apply Head Armor Over Fur")]
+		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		public bool applyHeadOver = false;
+
+		//[JsonIgnore]
+		[Label("Apply Body Armor Over Fur")]
+		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		public bool applyBodyOver = false;
+
+		//[JsonIgnore]
+		[Label("Apply Leg Armor Over Fur")]
+		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		public bool applyLegsOver = false;
+
 		[Label("Iris Color")]
 		public Color eyesIrisColor = new Color(242, 8, 46);
 
@@ -104,13 +123,17 @@ namespace BeastCustomization {
 		bool oldApplyHead;
 		bool oldApplyBody;
 		bool oldApplyLegs;
-		List<TagCompound> _presets;
-		[JsonIgnore]
-		public List<TagCompound> Presets {
-			get => _presets ??= new();
-			set => _presets = value ?? new();
-		}
-		public void StartCustomization() {
+		bool oldApplyHeadOver;
+		bool oldApplyBodyOver;
+		bool oldApplyLegsOver;
+		#endregion fields
+		public override string DisplayName => "Werewolf";
+		public override BeastPlayerBase CreateNew() => new WolfColorPlayer();
+		public override Type ResourceCacheType => typeof(Werewolf);
+		public override ref List<TagCompound> ConfigPresets => ref BeastCustomizationSavedPresets.Instance.wolfPresets;
+		public override bool IsActive => Player.wereWolf || Player.forceWerewolf;
+		public override int Specificity => 1;
+		public override void StartCustomization() {
 			oldHeadFurStyle = headFurStyle;
 			oldHeadTeethStyle = headTeethStyle;
 			oldBodyFurStyle = bodyFurStyle;
@@ -129,8 +152,11 @@ namespace BeastCustomization {
 			oldApplyHead = applyHead;
 			oldApplyBody = applyBody;
 			oldApplyLegs = applyLegs;
+			oldApplyHeadOver = applyHeadOver;
+			oldApplyBodyOver = applyBodyOver;
+			oldApplyLegsOver = applyLegsOver;
 		}
-		public void FinishCustomization(bool overwrite) {
+		public override void FinishCustomization(bool overwrite) {
 			if (!overwrite) {
 				headFurStyle = oldHeadFurStyle;
 				headTeethStyle = oldHeadTeethStyle;
@@ -150,34 +176,13 @@ namespace BeastCustomization {
 				applyHead = oldApplyHead;
 				applyBody = oldApplyBody;
 				applyLegs = oldApplyLegs;
+				applyHeadOver = oldApplyHeadOver;
+				applyBodyOver = oldApplyBodyOver;
+				applyLegsOver = oldApplyLegsOver;
 				SendData();
 			}
 		}
-		int GetSlot(int slotNum) {
-			switch (slotNum) {
-				case 0:
-				if (Player.armor[10].headSlot >= 0) {
-					return Player.armor[10].headSlot;
-				}
-				return Player.armor[0].headSlot;
-
-				case 1:
-				if (Player.armor[11].bodySlot >= 0) {
-					return Player.armor[11].bodySlot;
-				}
-				return Player.armor[1].bodySlot;
-
-				case 2:
-				if (Player.armor[12].legSlot >= 0) {
-					return Player.armor[12].legSlot;
-				}
-				return Player.armor[2].legSlot;
-
-				default:
-				return -1;
-			}
-		}
-		public void ExportData(TagCompound tag) {
+		public override void ExportData(TagCompound tag) {
 			tag["headFurStyle"] = headFurStyle;
 			tag["headTeethStyle"] = headTeethStyle;
 			tag["bodyFurStyle"] = bodyFurStyle;
@@ -196,12 +201,11 @@ namespace BeastCustomization {
 			tag["applyHead"] = applyHead;
 			tag["applyBody"] = applyBody;
 			tag["applyLegs"] = applyLegs;
+			tag["applyHeadOver"] = applyHeadOver;
+			tag["applyBodyOver"] = applyBodyOver;
+			tag["applyLegsOver"] = applyLegsOver;
 		}
-		public override void SaveData(TagCompound tag) {
-			ExportData(tag);
-			tag["SavedPresets"] = Presets;
-		}
-		public void ImportData(TagCompound tag) {
+		public override void ImportData(TagCompound tag) {
 			if (tag.TryGet("headFurStyle", out int tempHeadFurStyle)) headFurStyle = tempHeadFurStyle;
 			if (tag.TryGet("headTeethStyle", out int tempHeadTeethStyle)) headTeethStyle = tempHeadTeethStyle;
 			if (tag.TryGet("bodyFurStyle", out int tempBodyFurStyle)) bodyFurStyle = tempBodyFurStyle;
@@ -220,58 +224,12 @@ namespace BeastCustomization {
 			if (tag.TryGet("applyHead", out bool tempApplyHead)) applyHead = tempApplyHead;
 			if (tag.TryGet("applyBody", out bool tempApplyBody)) applyBody = tempApplyBody;
 			if (tag.TryGet("applyLegs", out bool tempApplyLegs)) applyLegs = tempApplyLegs;
+			if (tag.TryGet("applyHeadOver", out bool tempApplyHeadOver)) applyHeadOver = tempApplyHeadOver;
+			if (tag.TryGet("applyBodyOver", out bool tempApplyBodyOver)) applyBodyOver = tempApplyBodyOver;
+			if (tag.TryGet("applyLegsOver", out bool tempApplyLegsOver)) applyLegsOver = tempApplyLegsOver;
 			//Mod.Logger.Info($"loading {Player.name}, fur color: {furColor}");
 		}
-		public override void LoadData(TagCompound tag) {
-			ImportData(tag);
-			if (tag.TryGet("SavedPresets", out List<TagCompound> tempPresets)) Presets = tempPresets;
-		}
-		bool initialized = true;
-		public override void ResetEffects() {
-			if (!initialized) {
-				initialized = true;
-				if (Player.whoAmI == Main.myPlayer) {
-					SendData();
-					if (Main.netMode != NetmodeID.Server) {
-						//Main.NewText($"sending new {Player.name} to all, fur color: {furColor}");
-					}
-				} else {
-					BeastColorPlayer myBeastColorPlayer = Main.LocalPlayer.GetModPlayer<BeastColorPlayer>();
-					myBeastColorPlayer.SendData((short)Player.whoAmI);
-					if (Main.netMode != NetmodeID.Server) {
-						//Main.NewText($"sending preexisting {Main.LocalPlayer.name} to {Player.name}, fur color: {myBeastColorPlayer.furColor}");
-					}
-				}
-			}
-		}
-		public override void OnEnterWorld(Player player) {
-			SendData();
-			initialized = false;
-		}
-		public override void SyncPlayer(int toWho, int fromWho, bool newPlayer) {
-			if (newPlayer) {
-				SendData();
-				//Mod.Logger.Info($"sending new {Player.name} to all, fur color: {furColor}");
-			} else if (fromWho == -1) {
-				ModPacket packet = Mod.GetPacket();
-				packet.Write((byte)1);
-				packet.Write((short)toWho);
-				BeastCustomization.DebugLogger.Info("SyncPlayer");
-				BeastCustomization.DebugLogger.Info(packet.BaseStream.Position);
-				packet.Send(Player.whoAmI, -1);
-			}
-		}
-		internal void SendData(short toWho = -1) {
-			if (Main.netMode == NetmodeID.SinglePlayer) return;
-			ModPacket packet = Mod.GetPacket();
-			packet.Write((byte)0);
-			packet.Write((short)toWho);
-			NetSend(packet);
-			BeastCustomization.DebugLogger.Info("SendData");
-			BeastCustomization.DebugLogger.Info(packet.BaseStream.Position);
-			packet.Send(toWho, Player.whoAmI);
-		}
-		public void NetSend(BinaryWriter writer) {
+		public override void NetSend(BinaryWriter writer) {
 			BeastCustomization.DebugLogger.Info("NetSend");
 			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
 			writer.Write(headFurStyle);
@@ -295,9 +253,12 @@ namespace BeastCustomization {
 			writer.Write(applyHead);
 			writer.Write(applyBody);
 			writer.Write(applyLegs);
+			writer.Write(applyHeadOver);
+			writer.Write(applyBodyOver);
+			writer.Write(applyLegsOver);
 			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
 		}
-		public void NetRecieve(BinaryReader reader) {
+		public override void NetRecieve(BinaryReader reader) {
 			BeastCustomization.DebugLogger.Info("NetRecieve");
 			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 			headFurStyle = reader.ReadInt32();
@@ -321,64 +282,27 @@ namespace BeastCustomization {
 			applyHead = reader.ReadBoolean();
 			applyBody = reader.ReadBoolean();
 			applyLegs = reader.ReadBoolean();
+			applyHeadOver = reader.ReadBoolean();
+			applyBodyOver = reader.ReadBoolean();
+			applyLegsOver = reader.ReadBoolean();
 			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
-		}
-		internal Tuple<UIButton, TagCompound, string> renamingPreset;
-		public override void PreUpdate() {
-			if (renamingPreset is not null) {
-				if (!IngameFancyUI.CanShowVirtualKeyboard(2) || UIVirtualKeyboard.KeyboardContext != 2) {
-					string text = renamingPreset.Item1.Text;
-					string oldText = text;
-					if (text == " ") text = "";
-					PlayerInput.WritingText = true;
-					Main.instance.HandleIME();
-					text = Main.GetInputText(text);
-					if (text == "") text = " ";
-					if (text != oldText) {
-						renamingPreset.Item1.Text = text;
-					}
-					if (Main.inputTextEnter) {
-						renamingPreset.Item2["presetName"] = text;
-						renamingPreset = null;
-					} else if (Main.inputTextEscape) {
-						renamingPreset.Item1.Text = renamingPreset.Item3;
-						renamingPreset = null;
-					}
-				}
-				Main.editSign = true;
-			}
 		}
 		internal const bool enabled = true;
 		public override void HideDrawLayers(PlayerDrawSet drawInfo) {
-			if (BeastCustomization.OpenMenuHotkey.JustPressed) IngameFancyUI.OpenUIState(new CustomizationMenuState());
-			if (!enabled) return;
-			/*if (Main.menuMode == 888) {
-				for (int i = 13; i < 20; i++) {
-					if (Player.IsAValidEquipmentSlotForIteration(i)) {
-						int type = Player.armor[i].type;
-						if (type == 861 || type == 3110 || type == 485 || BeastCustomization.modMoonCharms.Contains(type)) {
-							drawInfo.drawPlayer.head = ArmorIDs.Head.Werewolf;
-							drawInfo.drawPlayer.body = ArmorIDs.Body.Werewolf;
-							drawInfo.drawPlayer.legs = 20;
-							break;
-						}
-					}
-				}
-			}*/
 			if (drawInfo.drawPlayer.head == ArmorIDs.Head.Werewolf) {
-				if (!applyHead) {
+				if (!applyHead || GetSlot(0) == -1) {
 					PlayerDrawLayers.Head.Hide();
 				}
 			}
 			if (drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf) {
-				if (!applyBody) {
+				if (!applyBody || GetSlot(1) == -1) {
 					PlayerDrawLayers.Skin.Hide();
 					PlayerDrawLayers.Torso.Hide();
 					PlayerDrawLayers.ArmOverItem.Hide();
 				}
 			}
 			if (drawInfo.drawPlayer.legs == 20) {
-				if (!applyLegs) {
+				if (!applyLegs || GetSlot(2) == -1) {
 					PlayerDrawLayers.Leggings.Hide();
 				}
 			}
@@ -388,7 +312,14 @@ namespace BeastCustomization {
 				int slot = GetSlot(0);
 				if (slot >= 0) {
 					drawInfo.drawPlayer.head = slot;
-					drawInfo.backHairDraw = ArmorIDs.Head.Sets.DrawBackHair[drawInfo.drawPlayer.head];
+					if (slot > 0 && slot < ArmorIDs.Head.Count) {
+						Main.instance.LoadArmorHead(slot);
+						int backID = ArmorIDs.Head.Sets.FrontToBackID[slot];
+						if (backID >= 0) {
+							Main.instance.LoadArmorHead(backID);
+						}
+					}
+					drawInfo.drawsBackHairWithoutHeadgear = ArmorIDs.Head.Sets.DrawsBackHairWithoutHeadgear[drawInfo.drawPlayer.head];
 					drawInfo.fullHair = ArmorIDs.Head.Sets.DrawFullHair[drawInfo.drawPlayer.head];
 					drawInfo.hatHair = ArmorIDs.Head.Sets.DrawHatHair[drawInfo.drawPlayer.head];
 				}
@@ -397,26 +328,203 @@ namespace BeastCustomization {
 				int slot = GetSlot(1);
 				if (slot >= 0) {
 					drawInfo.drawPlayer.body = slot;
+					if (slot > 0 && slot < ArmorIDs.Body.Count) {
+						Main.instance.LoadArmorBody(slot);
+					}
+					drawInfo.armorHidesHands = ArmorIDs.Body.Sets.HidesHands[slot];
+					drawInfo.armorHidesArms = ArmorIDs.Body.Sets.HidesArms[slot];
 				}
 			}
 			if (drawInfo.drawPlayer.legs == 20 && applyLegs) {
 				int slot = GetSlot(2);
 				if (slot >= 0) {
 					drawInfo.drawPlayer.legs = slot;
+					if (slot > 0 && slot < ArmorIDs.Legs.Count) {
+						Main.instance.LoadArmorLegs(slot);
+					}
 				}
 			}
 		}
 	}
-
+	public class Werewolf_Head_Layer : GenericHeadLayer {
+		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.head == ArmorIDs.Head.Werewolf;
+		}
+		public override IEnumerable<(Texture2D texture, Color color, bool applyDye)> GetData(PlayerDrawSet drawInfo) {
+			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
+			yield return (
+				Werewolf.HeadFurTextures[beastColorPlayer.headFurStyle],
+				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.furColor),
+				true
+			);
+			yield return (
+				Werewolf.HeadTeethTextures[beastColorPlayer.headTeethStyle],
+				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.headTeethColor),
+				true
+			);
+			yield return (
+				Werewolf.EyesScleraTexture,
+				beastColorPlayer.eyesGlow ? beastColorPlayer.eyesScleraColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesScleraColor),
+				beastColorPlayer.eyesDye
+			);
+			yield return (
+				Werewolf.EyesIrisTexture,
+				beastColorPlayer.eyesGlow ? beastColorPlayer.eyesIrisColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesIrisColor),
+				beastColorPlayer.eyesDye
+			);
+			if (beastColorPlayer.applyHeadOver) {
+				int slot = beastColorPlayer.GetSlot(0);
+				if (slot > 0) {
+					if (slot < ArmorIDs.Head.Count) {
+						Main.instance.LoadArmorHead(slot);
+						int backID = ArmorIDs.Head.Sets.FrontToBackID[slot];
+						if (backID >= 0) {
+							Main.instance.LoadArmorHead(backID);
+						}
+					}
+					yield return (
+						TextureAssets.ArmorHead[slot].Value,
+						drawInfo.colorArmorHead,
+						true
+					);
+				}
+			}
+		}
+	}
+	public class Werewolf_Body_Layer : GenericBodyLayer {
+		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
+		}
+		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
+			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
+			yield return (
+				Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor)
+			);
+			yield return (
+				Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2)
+			);
+			yield return (
+				Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor)
+			);
+			if (beastColorPlayer.applyBodyOver) {
+				int slot = beastColorPlayer.GetSlot(1);
+				if (slot > 0) {
+					if (slot < ArmorIDs.Head.Count) {
+						Main.instance.LoadArmorBody(slot);
+					}
+					yield return (
+						drawInfo.drawPlayer.Male ? TextureAssets.ArmorBodyComposite[slot].Value : TextureAssets.FemaleBody[slot].Value,
+						drawInfo.colorArmorBody
+					);
+				}
+			}
+		}
+	}
+	public class Werewolf_Arm_Layer_Back : GenericArmLayer_Back {
+		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
+		}
+		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
+			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
+			yield return (
+				Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor)
+			);
+			yield return (
+				Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2)
+			);
+			yield return (
+				Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor)
+			);
+			if (beastColorPlayer.applyBodyOver) {
+				int slot = beastColorPlayer.GetSlot(1);
+				if (slot > 0) {
+					if (slot < ArmorIDs.Head.Count) {
+						Main.instance.LoadArmorBody(slot);
+					}
+					yield return (
+						TextureAssets.ArmorBodyComposite[slot].Value,
+						drawInfo.colorArmorBody
+					);
+				}
+			}
+		}
+	}
+	public class Werewolf_Arm_Layer_Front : GenericArmLayer_Front {
+		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
+		}
+		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
+			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
+			yield return (
+				Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor)
+			);
+			yield return (
+				Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2)
+			);
+			yield return (
+				Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor)
+			);
+			if (beastColorPlayer.applyBodyOver) {
+				int slot = beastColorPlayer.GetSlot(1);
+				if (slot > 0) {
+					if (slot < ArmorIDs.Head.Count) {
+						Main.instance.LoadArmorBody(slot);
+					}
+					yield return (
+						TextureAssets.ArmorBodyComposite[slot].Value,
+						drawInfo.colorArmorBody
+					);
+				}
+			}
+		}
+	}
+	public class Werewolf_Legs_Layer : GenericLegsLayer {
+		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.legs == 20;//doesn't have an ArmorIDs entry?
+		}
+		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
+			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
+			yield return (
+				Werewolf.LegsFurTextures[beastColorPlayer.legsFurStyle],
+				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.furColor)
+			);
+			yield return (
+				Werewolf.LegsClawsTextures[beastColorPlayer.legsClawsStyle],
+				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.clawsColor)
+			);
+			if (beastColorPlayer.applyLegsOver) {
+				int slot = beastColorPlayer.GetSlot(2);
+				if (slot > 0) {
+					if (slot < ArmorIDs.Head.Count) {
+						Main.instance.LoadArmorLegs(slot);
+					}
+					yield return (
+						TextureAssets.ArmorLeg[slot].Value,
+						drawInfo.colorArmorLegs
+					);
+				}
+			}
+		}
+	}
+	/*
 	public class Head_Layer : PlayerDrawLayer {
 		public override bool IsHeadLayer => true;
 		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return BeastColorPlayer.enabled && drawInfo.drawPlayer.head == ArmorIDs.Head.Werewolf;
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.head == ArmorIDs.Head.Werewolf;
 		}
 		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Head, PlayerDrawLayers.FaceAcc);
 		protected override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
-			BeastColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<BeastColorPlayer>();
+			WolfColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<WolfColorPlayer>();
 			Color adjustedFurColor = drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.furColor);
 			Color adjustedIrisColor = beastColorPlayer.eyesGlow ? beastColorPlayer.eyesIrisColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesIrisColor);
 			Color adjustedScleraColor = beastColorPlayer.eyesGlow ? beastColorPlayer.eyesScleraColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesScleraColor);
@@ -424,33 +532,33 @@ namespace BeastCustomization {
 
 			Vector2 Position = new Vector2((int)(drawInfo.Position.X + drawPlayer.width / 2f - drawPlayer.bodyFrame.Width / 2f - Main.screenPosition.X), (int)(drawInfo.Position.Y + drawPlayer.height - drawPlayer.bodyFrame.Height + 4f - Main.screenPosition.Y)) + drawPlayer.headPosition + drawInfo.headVect;
 			Rectangle? Frame = drawPlayer.bodyFrame;
-			DrawData item = new(BeastCustomization.HeadFurTextures[beastColorPlayer.headFurStyle], Position, Frame, adjustedFurColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0) {
+			DrawData item = new(Werewolf.HeadFurTextures[beastColorPlayer.headFurStyle], Position, Frame, adjustedFurColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0) {
 				shader = drawPlayer.cHead
 			};
 			drawInfo.DrawDataCache.Add(item);
 
-			item = new(BeastCustomization.HeadTeethTextures[beastColorPlayer.headTeethStyle], Position, Frame, adjustedTeethColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0) {
+			item = new(Werewolf.HeadTeethTextures[beastColorPlayer.headTeethStyle], Position, Frame, adjustedTeethColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0) {
 				shader = drawPlayer.cHead
 			};
 			drawInfo.DrawDataCache.Add(item);
 
-			item = new(BeastCustomization.EyesScleraTexture, Position, Frame, adjustedScleraColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0);
+			item = new(Werewolf.EyesScleraTexture, Position, Frame, adjustedScleraColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0);
 			if (beastColorPlayer.eyesDye) item.shader = drawPlayer.cHead;
 			drawInfo.DrawDataCache.Add(item);
 
-			item = new(BeastCustomization.EyesIrisTexture, Position, Frame, adjustedIrisColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0);
+			item = new(Werewolf.EyesIrisTexture, Position, Frame, adjustedIrisColor, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0);
 			if (beastColorPlayer.eyesDye) item.shader = drawPlayer.cHead;
 			drawInfo.DrawDataCache.Add(item);
 		}
 	}
 	public class Body_Layer : PlayerDrawLayer {
 		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return BeastColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
 		}
 		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Torso, PlayerDrawLayers.OffhandAcc);
 		protected override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
-			BeastColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<BeastColorPlayer>();
+			WolfColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<WolfColorPlayer>();
 			Color adjustedFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor);
 			Color adjustedSecondaryFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2);
 			Color adjustedClawColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor);
@@ -462,17 +570,17 @@ namespace BeastCustomization {
 				value.Y -= 2f;
 				Position += value * -drawInfo.playerEffect.HasFlag(SpriteEffects.FlipVertically).ToDirectionInt();
 
-				DrawData item = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				DrawData item = new DrawData(Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawPlayer.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = GameShaders.Armor.GetShaderIdFromItemId(drawPlayer.dye[1].type)
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawPlayer.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
@@ -480,17 +588,17 @@ namespace BeastCustomization {
 				Rectangle Frame = drawPlayer.bodyFrame;
 
 				Vector2 Position = new Vector2((int)(drawInfo.Position.X - Main.screenPosition.X - Frame.Width / 2f + drawPlayer.width / 2f), (int)(drawInfo.Position.Y - Main.screenPosition.Y + drawPlayer.height - Frame.Height + 4f)) + drawPlayer.bodyPosition + drawInfo.bodyVect;
-				DrawData item = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				DrawData item = new DrawData(Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawPlayer.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawPlayer.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawPlayer.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
@@ -499,12 +607,12 @@ namespace BeastCustomization {
 	}
 	public class Arm_Layer_Back : PlayerDrawLayer {
 		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return BeastColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
 		}
 		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.BalloonAcc, PlayerDrawLayers.Skin);
 		protected override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
-			BeastColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<BeastColorPlayer>();
+			WolfColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<WolfColorPlayer>();
 			Color adjustedFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor);
 			Color adjustedSecondaryFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2);
 			Color adjustedClawColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor);
@@ -518,17 +626,17 @@ namespace BeastCustomization {
 				Vector2 bodyVect = drawInfo.bodyVect + backArmOffset;
 				position += drawInfo.backShoulderOffset;
 				float rotation = drawPlayer.bodyRotation + drawInfo.compositeBackArmRotation;
-				DrawData drawData = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], position, drawInfo.compBackArmFrame, adjustedFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+				DrawData drawData = new DrawData(Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle], position, drawInfo.compBackArmFrame, adjustedFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
 
-				drawData = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], position, drawInfo.compBackArmFrame, adjustedSecondaryFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+				drawData = new DrawData(Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], position, drawInfo.compBackArmFrame, adjustedSecondaryFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
 
-				drawData = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], position, drawInfo.compBackArmFrame, adjustedClawColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+				drawData = new DrawData(Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], position, drawInfo.compBackArmFrame, adjustedClawColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
@@ -536,17 +644,17 @@ namespace BeastCustomization {
 				Rectangle Frame = drawPlayer.bodyFrame;
 
 				Vector2 Position = new Vector2((int)(drawInfo.Position.X - Main.screenPosition.X - Frame.Width / 2f + drawPlayer.width / 2f), (int)(drawInfo.Position.Y - Main.screenPosition.Y + drawPlayer.height - Frame.Height + 4f)) + drawPlayer.bodyPosition + drawInfo.bodyVect;
-				DrawData item = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				DrawData item = new DrawData(Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
@@ -555,7 +663,7 @@ namespace BeastCustomization {
 	}
 	public class Arm_Layer_Front : PlayerDrawLayer {
 		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return BeastColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
 		}
 		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.ArmOverItem, PlayerDrawLayers.HandOnAcc);
 		protected override void Draw(ref PlayerDrawSet drawInfo) {
@@ -563,7 +671,7 @@ namespace BeastCustomization {
 			if (drawPlayer.controlUp) {
 
 			}
-			BeastColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<BeastColorPlayer>();
+			WolfColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<WolfColorPlayer>();
 			Color adjustedFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor);
 			Color adjustedSecondaryFurColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.furColor2);
 			Color adjustedClawColor = drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor);
@@ -583,17 +691,17 @@ namespace BeastCustomization {
 				if (drawInfo.compFrontArmFrame.X / drawInfo.compFrontArmFrame.Width >= 7) {
 					position += new Vector2((!drawInfo.playerEffect.HasFlag(SpriteEffects.FlipHorizontally)) ? 1 : -1, (!drawInfo.playerEffect.HasFlag(SpriteEffects.FlipVertically)) ? 1 : -1);
 				}
-				DrawData drawData = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], position, drawInfo.compFrontArmFrame, adjustedFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+				DrawData drawData = new DrawData(Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle], position, drawInfo.compFrontArmFrame, adjustedFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
 
-				drawData = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], position, drawInfo.compFrontArmFrame, adjustedSecondaryFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+				drawData = new DrawData(Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], position, drawInfo.compFrontArmFrame, adjustedSecondaryFurColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
 
-				drawData = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], position, drawInfo.compFrontArmFrame, adjustedClawColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
+				drawData = new DrawData(Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], position, drawInfo.compFrontArmFrame, adjustedClawColor, rotation, bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(drawData);
@@ -601,17 +709,17 @@ namespace BeastCustomization {
 				Rectangle Frame = drawPlayer.bodyFrame;
 
 				Vector2 Position = new Vector2((int)(drawInfo.Position.X - Main.screenPosition.X - Frame.Width / 2f + drawPlayer.width / 2f), (int)(drawInfo.Position.Y - Main.screenPosition.Y + drawPlayer.height - Frame.Height + 4f)) + drawPlayer.bodyPosition + drawInfo.bodyVect;
-				DrawData item = new DrawData(BeastCustomization.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				DrawData item = new DrawData(Werewolf.BodyFurTextures[beastColorPlayer.bodyFurStyle], Position, Frame, adjustedFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(Werewolf.BodySecondaryFurTextures[beastColorPlayer.bodySecondaryFurStyle], Position, Frame, adjustedSecondaryFurColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
 
-				item = new DrawData(BeastCustomization.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
+				item = new DrawData(Werewolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
 					shader = drawInfo.cBody
 				};
 				drawInfo.DrawDataCache.Add(item);
@@ -620,24 +728,25 @@ namespace BeastCustomization {
 	}
 	public class Legs_Layer : PlayerDrawLayer {
 		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return BeastColorPlayer.enabled && drawInfo.drawPlayer.legs == 20;//doesn't have an ArmorIDs entry?
+			return WolfColorPlayer.enabled && drawInfo.drawPlayer.legs == 20;//doesn't have an ArmorIDs entry?
 		}
 		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Leggings, PlayerDrawLayers.Shoes);
 		protected override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
-			BeastColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<BeastColorPlayer>();
+			WolfColorPlayer beastColorPlayer = drawPlayer.GetModPlayer<WolfColorPlayer>();
 			Color adjustedFurColor = drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.furColor);
 			Color adjustedClawColor = drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.clawsColor);
 
 			Vector2 Position = new Vector2((int)(drawInfo.Position.X - Main.screenPosition.X - drawPlayer.bodyFrame.Width / 2f + drawPlayer.width / 2f), (int)(drawInfo.Position.Y - Main.screenPosition.Y + drawPlayer.height - drawPlayer.bodyFrame.Height + 4f)) + drawPlayer.legPosition + drawInfo.legVect;
 			Rectangle? Frame = drawPlayer.legFrame;
-			DrawData item = new DrawData(BeastCustomization.LegsFurTextures[beastColorPlayer.legsFurStyle], Position, Frame, adjustedFurColor, drawPlayer.legRotation, drawInfo.legVect, 1f, drawInfo.playerEffect, 0);
+			DrawData item = new DrawData(Werewolf.LegsFurTextures[beastColorPlayer.legsFurStyle], Position, Frame, adjustedFurColor, drawPlayer.legRotation, drawInfo.legVect, 1f, drawInfo.playerEffect, 0);
 			item.shader = drawPlayer.cLegs;
 			drawInfo.DrawDataCache.Add(item);
 
-			item = new DrawData(BeastCustomization.LegsClawsTextures[beastColorPlayer.legsClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.legRotation, drawInfo.legVect, 1f, drawInfo.playerEffect, 0);
+			item = new DrawData(Werewolf.LegsClawsTextures[beastColorPlayer.legsClawsStyle], Position, Frame, adjustedClawColor, drawPlayer.legRotation, drawInfo.legVect, 1f, drawInfo.playerEffect, 0);
 			item.shader = drawPlayer.cLegs;
 			drawInfo.DrawDataCache.Add(item);
 		}
 	}
+	//*/
 }
