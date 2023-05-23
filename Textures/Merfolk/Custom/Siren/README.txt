@@ -1,0 +1,1 @@
+Uses the player's hair for the head. Additionally, let the player able to choose if ears are covered by the hair or not if possible.
