@@ -67,6 +67,9 @@ namespace BeastCustomization {
 		[Label("Apply Body Armor")]
 		public bool applyBody = false;
 
+		[Label("Apply Cloaks")]
+		public bool applyCloaks = true;
+
 		//[JsonIgnore]
 		[Label("Apply Leg Armor")]
 		public bool applyLegs = false;
@@ -96,7 +99,8 @@ namespace BeastCustomization {
 		public Color scaleColor2 = new Color(168, 255, 106);
 
 		int oldHeadScaleStyle;
-		int oldHeadTeethStyle;
+		int oldHeadEyeStyle;
+		int oldHeadScaleStyle2;
 		int oldBodyScaleStyle;
 		int oldBodySecondaryScaleStyle;
 		int oldLegsScaleStyle;
@@ -108,6 +112,7 @@ namespace BeastCustomization {
 		Color oldScaleColor2;
 		bool oldApplyHead;
 		bool oldApplyBody;
+		bool oldApplyCloaks;
 		bool oldApplyLegs;
 		bool oldApplyHeadOver;
 		bool oldApplyBodyOver;
@@ -121,11 +126,15 @@ namespace BeastCustomization {
 		public override int Specificity => 1;
 		public override void StartCustomization() {
 			oldHeadScaleStyle = headScaleStyle;
-			oldHeadTeethStyle = headScaleStyle2;
+			oldHeadScaleStyle2 = headScaleStyle2;
+			oldHeadEyeStyle = headEyeStyle;
+
 			oldBodyScaleStyle = bodyScaleStyle;
 			oldBodySecondaryScaleStyle = bodySecondaryScaleStyle;
+
 			oldLegsScaleStyle = legsScaleStyle;
 			oldLegsClawsStyle = legsScaleStyle2;
+
 			oldEyesGlow = eyesGlow;
 			oldEyesDye = eyesDye;
 			oldEyesIrisColor = eyesColor;
@@ -133,6 +142,7 @@ namespace BeastCustomization {
 			oldScaleColor2 = scaleColor2;
 			oldApplyHead = applyHead;
 			oldApplyBody = applyBody;
+			oldApplyCloaks = applyCloaks;
 			oldApplyLegs = applyLegs;
 			oldApplyHeadOver = applyHeadOver;
 			oldApplyBodyOver = applyBodyOver;
@@ -141,11 +151,15 @@ namespace BeastCustomization {
 		public override void FinishCustomization(bool overwrite) {
 			if (!overwrite) {
 				headScaleStyle = oldHeadScaleStyle;
-				headScaleStyle2 = oldHeadTeethStyle;
+				headScaleStyle2 = oldHeadScaleStyle2;
+				headEyeStyle = oldHeadEyeStyle;
+
 				bodyScaleStyle = oldBodyScaleStyle;
 				bodySecondaryScaleStyle = oldBodySecondaryScaleStyle;
+
 				legsScaleStyle = oldLegsScaleStyle;
 				legsScaleStyle2 = oldLegsClawsStyle;
+
 				eyesGlow = oldEyesGlow;
 				eyesDye = oldEyesDye;
 				eyesColor = oldEyesIrisColor;
@@ -153,6 +167,7 @@ namespace BeastCustomization {
 				scaleColor2 = oldScaleColor2;
 				applyHead = oldApplyHead;
 				applyBody = oldApplyBody;
+				applyCloaks = oldApplyCloaks;
 				applyLegs = oldApplyLegs;
 				applyHeadOver = oldApplyHeadOver;
 				applyBodyOver = oldApplyBodyOver;
@@ -163,6 +178,7 @@ namespace BeastCustomization {
 		public override void ExportData(TagCompound tag) {
 			tag["headScaleStyle"] = headScaleStyle;
 			tag["headScaleStyle2"] = headScaleStyle2;
+			tag["headEyeStyle"] = headEyeStyle;
 			tag["bodyScaleStyle"] = bodyScaleStyle;
 			tag["bodySecondaryScaleStyle"] = bodySecondaryScaleStyle;
 			tag["legsScaleStyle"] = legsScaleStyle;
@@ -174,6 +190,7 @@ namespace BeastCustomization {
 			tag["scaleColor2"] = scaleColor2;
 			tag["applyHead"] = applyHead;
 			tag["applyBody"] = applyBody;
+			tag["applyCloaks"] = applyCloaks;
 			tag["applyLegs"] = applyLegs;
 			tag["applyHeadOver"] = applyHeadOver;
 			tag["applyBodyOver"] = applyBodyOver;
@@ -181,7 +198,8 @@ namespace BeastCustomization {
 		}
 		public override void ImportData(TagCompound tag) {
 			if (tag.TryGet("headScaleStyle", out int tempHeadScaleStyle)) headScaleStyle = tempHeadScaleStyle;
-			if (tag.TryGet("headScaleStyle2", out int tempHeadTeethStyle)) headScaleStyle2 = tempHeadTeethStyle;
+			if (tag.TryGet("headScaleStyle2", out int tempHeadScaleStyle2)) headScaleStyle2 = tempHeadScaleStyle2;
+			if (tag.TryGet("headEyeStyle", out int tempHeadEyeStyle)) headEyeStyle = tempHeadEyeStyle;
 			if (tag.TryGet("bodyScaleStyle", out int tempBodyScaleStyle)) bodyScaleStyle = tempBodyScaleStyle;
 			if (tag.TryGet("bodySecondaryScaleStyle", out int tempBodySecondaryScaleStyle)) bodySecondaryScaleStyle = tempBodySecondaryScaleStyle;
 			if (tag.TryGet("legsScaleStyle", out int tempLegsScaleStyle)) legsScaleStyle = tempLegsScaleStyle;
@@ -193,6 +211,7 @@ namespace BeastCustomization {
 			if (tag.TryGet("scaleColor2", out Color tempScaleColor2)) scaleColor2 = tempScaleColor2;
 			if (tag.TryGet("applyHead", out bool tempApplyHead)) applyHead = tempApplyHead;
 			if (tag.TryGet("applyBody", out bool tempApplyBody)) applyBody = tempApplyBody;
+			if (tag.TryGet("applyCloaks", out bool tempApplyCloaks)) applyCloaks = tempApplyCloaks;
 			if (tag.TryGet("applyLegs", out bool tempApplyLegs)) applyLegs = tempApplyLegs;
 			if (tag.TryGet("applyHeadOver", out bool tempApplyHeadOver)) applyHeadOver = tempApplyHeadOver;
 			if (tag.TryGet("applyBodyOver", out bool tempApplyBodyOver)) applyBodyOver = tempApplyBodyOver;
@@ -204,8 +223,11 @@ namespace BeastCustomization {
 			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
 			writer.Write(headScaleStyle);
 			writer.Write(headScaleStyle2);
+			writer.Write(headEyeStyle);
+
 			writer.Write(bodyScaleStyle);
 			writer.Write(bodySecondaryScaleStyle);
+
 			writer.Write(legsScaleStyle);
 			writer.Write(legsScaleStyle2);
 
@@ -218,6 +240,7 @@ namespace BeastCustomization {
 
 			writer.Write(applyHead);
 			writer.Write(applyBody);
+			writer.Write(applyCloaks);
 			writer.Write(applyLegs);
 			writer.Write(applyHeadOver);
 			writer.Write(applyBodyOver);
@@ -229,8 +252,11 @@ namespace BeastCustomization {
 			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 			headScaleStyle = reader.ReadInt32();
 			headScaleStyle2 = reader.ReadInt32();
+			headEyeStyle = reader.ReadInt32();
+
 			bodyScaleStyle = reader.ReadInt32();
 			bodySecondaryScaleStyle = reader.ReadInt32();
+
 			legsScaleStyle = reader.ReadInt32();
 			legsScaleStyle2 = reader.ReadInt32();
 
@@ -243,74 +269,27 @@ namespace BeastCustomization {
 
 			applyHead = reader.ReadBoolean();
 			applyBody = reader.ReadBoolean();
+			applyCloaks = reader.ReadBoolean();
 			applyLegs = reader.ReadBoolean();
 			applyHeadOver = reader.ReadBoolean();
 			applyBodyOver = reader.ReadBoolean();
 			applyLegsOver = reader.ReadBoolean();
 			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 		}
-		public override void HideDrawLayers(PlayerDrawSet drawInfo) {
-			if (drawInfo.drawPlayer.head == ArmorIDs.Head.Merman) {
-				if (!applyHead || GetSlot(0) == -1) {
-					PlayerDrawLayers.Head.Hide();
-				}
-			}
-			if (drawInfo.drawPlayer.body == ArmorIDs.Body.Merfolk) {
-				if (!applyBody || GetSlot(1) == -1) {
-					PlayerDrawLayers.Skin.Hide();
-					PlayerDrawLayers.Torso.Hide();
-					PlayerDrawLayers.ArmOverItem.Hide();
-				}
-			}
-			if (drawInfo.drawPlayer.legs == 21) {
-				if (!applyLegs || GetSlot(2) == -1) {
-					PlayerDrawLayers.Leggings.Hide();
-				}
-			}
+		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
+			applyHead = this.applyHead;
+			applyBody = this.applyBody;
+			applyCloaks = this.applyCloaks;
+			applyLegs = this.applyLegs;
 		}
-		public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
-			if (drawInfo.drawPlayer.head == ArmorIDs.Head.Merman && applyHead) {
-				int slot = GetSlot(0);
-				if (slot >= 0) {
-					drawInfo.drawPlayer.head = slot;
-					if (slot > 0 && slot < ArmorIDs.Head.Count) {
-						Main.instance.LoadArmorHead(slot);
-						int backID = ArmorIDs.Head.Sets.FrontToBackID[slot];
-						if (backID >= 0) {
-							Main.instance.LoadArmorHead(backID);
-						}
-					}
-					drawInfo.drawsBackHairWithoutHeadgear = ArmorIDs.Head.Sets.DrawsBackHairWithoutHeadgear[drawInfo.drawPlayer.head];
-					drawInfo.fullHair = ArmorIDs.Head.Sets.DrawFullHair[drawInfo.drawPlayer.head];
-					drawInfo.hatHair = ArmorIDs.Head.Sets.DrawHatHair[drawInfo.drawPlayer.head];
-				}
-			}
-			if (drawInfo.drawPlayer.body == ArmorIDs.Body.Merfolk && applyBody) {
-				int slot = GetSlot(1);
-				if (slot >= 0) {
-					drawInfo.drawPlayer.body = slot;
-					if (slot > 0 && slot < ArmorIDs.Body.Count) {
-						Main.instance.LoadArmorBody(slot);
-					}
-					drawInfo.armorHidesHands = ArmorIDs.Body.Sets.HidesHands[slot];
-					drawInfo.armorHidesArms = ArmorIDs.Body.Sets.HidesArms[slot];
-				}
-			}
-			if (drawInfo.drawPlayer.legs == 21 && applyLegs) {
-				int slot = GetSlot(2);
-				if (slot >= 0) {
-					drawInfo.drawPlayer.legs = slot;
-					if (slot > 0 && slot < ArmorIDs.Legs.Count) {
-						Main.instance.LoadArmorLegs(slot);
-					}
-				}
-			}
+		public override void HideVanillaDrawLayers(PlayerDrawSet drawInfo, out bool hideHead, out bool hideBody, out bool hideLegs) {
+			hideHead = !applyHead || GetSlot(0) == -1;
+			hideBody = !applyBody || GetSlot(1) == -1;
+			hideLegs = !applyLegs || GetSlot(2) == -1;
 		}
 	}
 	public class Merfolk_Head_Layer : GenericHeadLayer {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return drawInfo.drawPlayer.head == ArmorIDs.Head.Merman;
-		}
+		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color, bool applyDye)> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
@@ -324,7 +303,7 @@ namespace BeastCustomization {
 				true
 			);
 			yield return (
-				Merfolk.EyesTextures[beastColorPlayer.headScaleStyle2],
+				Merfolk.EyesTextures[beastColorPlayer.headEyeStyle],
 				beastColorPlayer.eyesGlow ? beastColorPlayer.eyesColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesColor),
 				beastColorPlayer.eyesDye
 			);
@@ -348,9 +327,7 @@ namespace BeastCustomization {
 		}
 	}
 	public class Merfolk_Body_Layer : GenericBodyLayer {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return drawInfo.drawPlayer.body == ArmorIDs.Body.Merfolk;
-		}
+		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
@@ -376,9 +353,7 @@ namespace BeastCustomization {
 		}
 	}
 	public class Merfolk_Arm_Layer_Back : GenericArmLayer_Back {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return drawInfo.drawPlayer.body == ArmorIDs.Body.Merfolk;
-		}
+		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
@@ -404,9 +379,7 @@ namespace BeastCustomization {
 		}
 	}
 	public class Merfolk_Arm_Layer_Front : GenericArmLayer_Front {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return drawInfo.drawPlayer.body == ArmorIDs.Body.Merfolk;
-		}
+		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
@@ -432,9 +405,7 @@ namespace BeastCustomization {
 		}
 	}
 	public class Merfolk_Legs_Layer : GenericLegsLayer {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return drawInfo.drawPlayer.legs == 21;
-		}
+		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (

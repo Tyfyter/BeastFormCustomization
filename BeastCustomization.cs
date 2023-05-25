@@ -43,6 +43,11 @@ namespace BeastCustomization {
 			get => beastPlayers ??= new();
 			private set => beastPlayers = value;
 		}
+		static Dictionary<Type, int> beastPlayersByType;
+		public static Dictionary<Type, int> BeastPlayersByType {
+			get => beastPlayersByType ??= new();
+			private set => beastPlayersByType = value;
+		}
 		public static ModKeybind OpenMenuHotkey { get; private set; }
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightLock;
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightHover;
@@ -70,11 +75,10 @@ namespace BeastCustomization {
 			_rightHover = null;
 			modMoonCharms = null;
 		}
-		public static void FillSpriteList(List<AutoCastingAsset<Texture2D>> list, string baseName) {
-			int i = 1;
-			while (Instance.RequestAssetIfExists($"{baseName}_{i}", out Asset<Texture2D> sprite)) {
+		public static void FillSpriteList(List<AutoCastingAsset<Texture2D>> list, string baseName, int startIndex = 1) {
+			while (Instance.RequestAssetIfExists($"{baseName}_{startIndex}", out Asset<Texture2D> sprite)) {
 				list.Add(sprite);
-				i++;
+				startIndex++;
 			}
 		}
 		public override void HandlePacket(BinaryReader reader, int whoAmI) {
@@ -583,21 +587,83 @@ namespace BeastCustomization {
 		}
 	}
 	public sealed class SharedModPlayer : ModPlayer {
-		public override void HideDrawLayers(PlayerDrawSet drawInfo) {
-			if (BeastCustomization.OpenMenuHotkey.JustPressed) {
-				if (BeastCustomizationConfig.Instance.openToActive) {
-					BeastPlayerBase selected = null;
-					int specificity = 0;
-					foreach (int i in BeastCustomization.BeastPlayers) {
-						if (Main.LocalPlayer.ModPlayers[i] is BeastPlayerBase beastPlayer && beastPlayer.IsActive && beastPlayer.Specificity > specificity) {
-							selected = beastPlayer;
-							specificity = beastPlayer.Specificity;
+		public BeastPlayerBase current;
+		public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
+			current = null;
+			if (drawInfo.drawPlayer.ModPlayers.Length <= 0) return;
+			int specificity = 0;
+			foreach (int i in BeastCustomization.BeastPlayers) {
+				if (drawInfo.drawPlayer.ModPlayers[i] is BeastPlayerBase beastPlayer && beastPlayer.IsActive && beastPlayer.Specificity > specificity) {
+					current = beastPlayer;
+					specificity = beastPlayer.Specificity;
+				}
+			}
+			if (current is not null) {
+				current.ApplyVanillaDrawLayers(drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs);
+				if (applyHead) {
+					int slot = current.GetSlot(0);
+					if (slot >= 0) {
+						drawInfo.drawPlayer.head = slot;
+						if (slot > 0 && slot < ArmorIDs.Head.Count) {
+							Main.instance.LoadArmorHead(slot);
+							int backID = ArmorIDs.Head.Sets.FrontToBackID[slot];
+							if (backID >= 0) {
+								Main.instance.LoadArmorHead(backID);
+							}
+						}
+						drawInfo.drawsBackHairWithoutHeadgear = ArmorIDs.Head.Sets.DrawsBackHairWithoutHeadgear[drawInfo.drawPlayer.head];
+						drawInfo.fullHair = ArmorIDs.Head.Sets.DrawFullHair[drawInfo.drawPlayer.head];
+						drawInfo.hatHair = ArmorIDs.Head.Sets.DrawHatHair[drawInfo.drawPlayer.head];
+					}
+				}
+				if (applyBody) {
+					int slot = current.GetSlot(1);
+					if (slot >= 0) {
+						drawInfo.drawPlayer.body = slot;
+						if (slot > 0 && slot < ArmorIDs.Body.Count) {
+							Main.instance.LoadArmorBody(slot);
+						}
+						drawInfo.armorHidesHands = ArmorIDs.Body.Sets.HidesHands[slot];
+						drawInfo.armorHidesArms = ArmorIDs.Body.Sets.HidesArms[slot];
+					}
+				}
+				if (!applyCloaks) {
+					drawInfo.drawPlayer.back = 0;
+					drawInfo.drawPlayer.front = 0;
+				}
+				if (applyLegs) {
+					int slot = current.GetSlot(2);
+					if (slot >= 0) {
+						drawInfo.drawPlayer.legs = slot;
+						if (slot > 0 && slot < ArmorIDs.Legs.Count) {
+							Main.instance.LoadArmorLegs(slot);
 						}
 					}
-					if (specificity > 0) {
-						IngameFancyUI.OpenUIState(new CustomizationMenuState(selected.ModIndex));
-						return;
-					}
+				}
+			}
+		}
+		public override void HideDrawLayers(PlayerDrawSet drawInfo) {
+			HandleKeybind();
+			if (current is not null) {
+				current.HideVanillaDrawLayers(drawInfo, out bool hideHead, out bool hideBody, out bool hideLegs);
+				if (hideHead) {
+					PlayerDrawLayers.Head.Hide();
+				}
+				if (hideBody) {
+					PlayerDrawLayers.Skin.Hide();
+					PlayerDrawLayers.Torso.Hide();
+					PlayerDrawLayers.ArmOverItem.Hide();
+				}
+				if (hideLegs) {
+					PlayerDrawLayers.Leggings.Hide();
+				}
+			}
+		}
+		void HandleKeybind() {
+			if (BeastCustomization.OpenMenuHotkey.JustPressed) {
+				if (BeastCustomizationConfig.Instance.openToActive && current is not null) {
+					IngameFancyUI.OpenUIState(new CustomizationMenuState(current.ModIndex));
+					return;
 				}
 				IngameFancyUI.OpenUIState(new CustomizationMenuSelectorState());
 			}
@@ -851,46 +917,39 @@ namespace BeastCustomization {
 		[Tooltip("Whether or not the keybind will skip the selection menu and directly open the current form's menu\n(when applicable)")]
 		public bool openToActive = true;
 	}
-	public class BeastCustomizationSavedPresets : ModConfig {
-		public override ConfigScope Mode => ConfigScope.ClientSide;
-		public static BeastCustomizationSavedPresets Instance;
-		[Tooltip("this shouldn't be edited here")]
-		[JsonIgnore]
+	public class BeastCustomizationSavedPresets : ILoadable {
+		public static BeastCustomizationSavedPresets Instance => ModContent.GetInstance<BeastCustomizationSavedPresets>();
 		internal List<TagCompound> wolfPresets;
-		[Tooltip("this shouldn't be edited here")]
-		public List<Dictionary<string, object>> WolfPresets {
-			get => (wolfPresets ??= new()).Select(item => new Dictionary<string, object>(item)).ToList();
-			set {
-				wolfPresets = ReadJSON(value);
-			}
-		}
-		[Tooltip("this shouldn't be edited here")]
-		[JsonIgnore]
 		internal List<TagCompound> fishPresets;
-		[Tooltip("this shouldn't be edited here")]
-		public List<Dictionary<string, object>> FishPresets {
-			get => (fishPresets ??= new()).Select(item => new Dictionary<string, object>(item)).ToList();
-			set {
-				fishPresets = ReadJSON(value);
-			}
+		internal List<TagCompound> fishWolfPresets;
+		static string SavePath => Path.Combine(ConfigManager.ModConfigPath, "BeastCustomizationSavedPresets" + ".nbt");
+		public void Load(Mod mod) {
+			Read();
 		}
-		public static List<TagCompound> ReadJSON(List<Dictionary<string, object>> value) {
-			List<TagCompound> _presets = new(value.Count);
-			foreach (Dictionary<string, object> item in value) {
-				TagCompound tag = new();
-				foreach (KeyValuePair<string, object> keyValuePair in item) {
-					tag.Add(keyValuePair);
-				}
-				_presets.Add(tag);
+		public void Unload() {
+			Save();
+		}
+		internal void Read() {
+			if (File.Exists(SavePath)) {
+				TagCompound tag = TagIO.FromFile(SavePath);
+				tag.TryGet("WolfPresets", out wolfPresets);
+				tag.TryGet("FishPresets", out fishPresets);
+				tag.TryGet("FishWolfPresets", out fishWolfPresets);
 			}
-			return _presets;
+			wolfPresets ??= new();
+			fishPresets ??= new();
+			fishWolfPresets ??= new();
 		}
 		internal void Save() {
 			Directory.CreateDirectory(ConfigManager.ModConfigPath);
-			string filename = Mod.Name + "_" + Name + ".json";
-			string path = Path.Combine(ConfigManager.ModConfigPath, filename);
-			string json = JsonConvert.SerializeObject(this, ConfigManager.serializerSettings);
-			File.WriteAllText(path, json);
+			TagIO.ToFile(
+				new TagCompound() {
+					["WolfPresets"] = wolfPresets,
+					["FishPresets"] = fishPresets,
+					["FishWolfPresets"] = fishWolfPresets
+				},
+				SavePath
+			);
 		}
 	}
 }

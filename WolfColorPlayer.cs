@@ -68,6 +68,9 @@ namespace BeastCustomization {
 		[Label("Apply Body Armor")]
 		public bool applyBody = false;
 
+		[Label("Apply Cloaks")]
+		public bool applyCloaks = true;
+
 		//[JsonIgnore]
 		[Label("Apply Leg Armor")]
 		public bool applyLegs = false;
@@ -122,6 +125,7 @@ namespace BeastCustomization {
 		Color oldClawsColor;
 		bool oldApplyHead;
 		bool oldApplyBody;
+		bool oldApplyCloaks;
 		bool oldApplyLegs;
 		bool oldApplyHeadOver;
 		bool oldApplyBodyOver;
@@ -151,6 +155,7 @@ namespace BeastCustomization {
 			oldClawsColor = clawsColor;
 			oldApplyHead = applyHead;
 			oldApplyBody = applyBody;
+			oldApplyCloaks = applyCloaks;
 			oldApplyLegs = applyLegs;
 			oldApplyHeadOver = applyHeadOver;
 			oldApplyBodyOver = applyBodyOver;
@@ -175,6 +180,7 @@ namespace BeastCustomization {
 				clawsColor = oldClawsColor;
 				applyHead = oldApplyHead;
 				applyBody = oldApplyBody;
+				applyCloaks = oldApplyCloaks;
 				applyLegs = oldApplyLegs;
 				applyHeadOver = oldApplyHeadOver;
 				applyBodyOver = oldApplyBodyOver;
@@ -200,6 +206,7 @@ namespace BeastCustomization {
 			tag["clawsColor"] = clawsColor;
 			tag["applyHead"] = applyHead;
 			tag["applyBody"] = applyBody;
+			tag["applyCloaks"] = applyCloaks;
 			tag["applyLegs"] = applyLegs;
 			tag["applyHeadOver"] = applyHeadOver;
 			tag["applyBodyOver"] = applyBodyOver;
@@ -223,6 +230,7 @@ namespace BeastCustomization {
 			if (tag.TryGet("clawsColor", out Color tempClawsColor)) clawsColor = tempClawsColor;
 			if (tag.TryGet("applyHead", out bool tempApplyHead)) applyHead = tempApplyHead;
 			if (tag.TryGet("applyBody", out bool tempApplyBody)) applyBody = tempApplyBody;
+			if (tag.TryGet("applyCloaks", out bool tempApplyCloaks)) applyCloaks = tempApplyCloaks;
 			if (tag.TryGet("applyLegs", out bool tempApplyLegs)) applyLegs = tempApplyLegs;
 			if (tag.TryGet("applyHeadOver", out bool tempApplyHeadOver)) applyHeadOver = tempApplyHeadOver;
 			if (tag.TryGet("applyBodyOver", out bool tempApplyBodyOver)) applyBodyOver = tempApplyBodyOver;
@@ -252,6 +260,7 @@ namespace BeastCustomization {
 
 			writer.Write(applyHead);
 			writer.Write(applyBody);
+			writer.Write(applyCloaks);
 			writer.Write(applyLegs);
 			writer.Write(applyHeadOver);
 			writer.Write(applyBodyOver);
@@ -281,6 +290,7 @@ namespace BeastCustomization {
 
 			applyHead = reader.ReadBoolean();
 			applyBody = reader.ReadBoolean();
+			applyCloaks = reader.ReadBoolean();
 			applyLegs = reader.ReadBoolean();
 			applyHeadOver = reader.ReadBoolean();
 			applyBodyOver = reader.ReadBoolean();
@@ -288,68 +298,20 @@ namespace BeastCustomization {
 			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 		}
 		internal const bool enabled = true;
-		public override void HideDrawLayers(PlayerDrawSet drawInfo) {
-			if (drawInfo.drawPlayer.head == ArmorIDs.Head.Werewolf) {
-				if (!applyHead || GetSlot(0) == -1) {
-					PlayerDrawLayers.Head.Hide();
-				}
-			}
-			if (drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf) {
-				if (!applyBody || GetSlot(1) == -1) {
-					PlayerDrawLayers.Skin.Hide();
-					PlayerDrawLayers.Torso.Hide();
-					PlayerDrawLayers.ArmOverItem.Hide();
-				}
-			}
-			if (drawInfo.drawPlayer.legs == 20) {
-				if (!applyLegs || GetSlot(2) == -1) {
-					PlayerDrawLayers.Leggings.Hide();
-				}
-			}
+		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
+			applyHead = this.applyHead;
+			applyBody = this.applyBody;
+			applyCloaks = this.applyCloaks;
+			applyLegs = this.applyLegs;
 		}
-		public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
-			if (drawInfo.drawPlayer.head == ArmorIDs.Head.Werewolf && applyHead) {
-				int slot = GetSlot(0);
-				if (slot >= 0) {
-					drawInfo.drawPlayer.head = slot;
-					if (slot > 0 && slot < ArmorIDs.Head.Count) {
-						Main.instance.LoadArmorHead(slot);
-						int backID = ArmorIDs.Head.Sets.FrontToBackID[slot];
-						if (backID >= 0) {
-							Main.instance.LoadArmorHead(backID);
-						}
-					}
-					drawInfo.drawsBackHairWithoutHeadgear = ArmorIDs.Head.Sets.DrawsBackHairWithoutHeadgear[drawInfo.drawPlayer.head];
-					drawInfo.fullHair = ArmorIDs.Head.Sets.DrawFullHair[drawInfo.drawPlayer.head];
-					drawInfo.hatHair = ArmorIDs.Head.Sets.DrawHatHair[drawInfo.drawPlayer.head];
-				}
-			}
-			if (drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf && applyBody) {
-				int slot = GetSlot(1);
-				if (slot >= 0) {
-					drawInfo.drawPlayer.body = slot;
-					if (slot > 0 && slot < ArmorIDs.Body.Count) {
-						Main.instance.LoadArmorBody(slot);
-					}
-					drawInfo.armorHidesHands = ArmorIDs.Body.Sets.HidesHands[slot];
-					drawInfo.armorHidesArms = ArmorIDs.Body.Sets.HidesArms[slot];
-				}
-			}
-			if (drawInfo.drawPlayer.legs == 20 && applyLegs) {
-				int slot = GetSlot(2);
-				if (slot >= 0) {
-					drawInfo.drawPlayer.legs = slot;
-					if (slot > 0 && slot < ArmorIDs.Legs.Count) {
-						Main.instance.LoadArmorLegs(slot);
-					}
-				}
-			}
+		public override void HideVanillaDrawLayers(PlayerDrawSet drawInfo, out bool hideHead, out bool hideBody, out bool hideLegs) {
+			hideHead = !applyHead || GetSlot(0) == -1;
+			hideBody = !applyBody || GetSlot(1) == -1;
+			hideLegs = !applyLegs || GetSlot(2) == -1;
 		}
 	}
 	public class Werewolf_Head_Layer : GenericHeadLayer {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return WolfColorPlayer.enabled && drawInfo.drawPlayer.head == ArmorIDs.Head.Werewolf;
-		}
+		public override Type BoundBeastPlayer => typeof(WolfColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color, bool applyDye)> GetData(PlayerDrawSet drawInfo) {
 			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
 			yield return (
@@ -392,9 +354,7 @@ namespace BeastCustomization {
 		}
 	}
 	public class Werewolf_Body_Layer : GenericBodyLayer {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
-		}
+		public override Type BoundBeastPlayer => typeof(WolfColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
 			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
 			yield return (
@@ -424,9 +384,7 @@ namespace BeastCustomization {
 		}
 	}
 	public class Werewolf_Arm_Layer_Back : GenericArmLayer_Back {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
-		}
+		public override Type BoundBeastPlayer => typeof(WolfColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
 			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
 			yield return (
@@ -456,9 +414,7 @@ namespace BeastCustomization {
 		}
 	}
 	public class Werewolf_Arm_Layer_Front : GenericArmLayer_Front {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return WolfColorPlayer.enabled && drawInfo.drawPlayer.body == ArmorIDs.Body.Werewolf;
-		}
+		public override Type BoundBeastPlayer => typeof(WolfColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
 			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
 			yield return (
@@ -488,9 +444,7 @@ namespace BeastCustomization {
 		}
 	}
 	public class Werewolf_Legs_Layer : GenericLegsLayer {
-		public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
-			return WolfColorPlayer.enabled && drawInfo.drawPlayer.legs == 20;//doesn't have an ArmorIDs entry?
-		}
+		public override Type BoundBeastPlayer => typeof(WolfColorPlayer);
 		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
 			WolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<WolfColorPlayer>();
 			yield return (

@@ -34,9 +34,11 @@ namespace BeastCustomization.Textures {
 				EyesIrisTexture = Assets.Request<Texture2D>("Textures/Werewolf/Head_Eyes_Iris");
 				EyesScleraTexture = Assets.Request<Texture2D>("Textures/Werewolf/Head_Eyes_White");
 				BeastCustomization.FillSpriteList(HeadTeethTextures, "Textures/Werewolf/Head_Teeth");
+
 				BeastCustomization.FillSpriteList(BodyFurTextures, "Textures/Werewolf/Body_Fur");
 				BodySecondaryFurTextures.Add(Assets.Request<Texture2D>("Textures/Werewolf/Body_Secondary_Fur_0"));
 				BeastCustomization.FillSpriteList(BodySecondaryFurTextures, "Textures/Werewolf/Body_Secondary_Fur");
+
 				BeastCustomization.FillSpriteList(BodyClawsTextures, "Textures/Werewolf/Body_Claws");
 				BeastCustomization.FillSpriteList(LegsFurTextures, "Textures/Werewolf/Legs_Fur");
 				BeastCustomization.FillSpriteList(LegsFurTextures, "Textures/Werewolf/Legs_Fur_2");

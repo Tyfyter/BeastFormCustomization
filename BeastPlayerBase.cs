@@ -27,8 +27,9 @@ namespace BeastCustomization {
 			return modPlayer;
 		}
 		public sealed override void SetStaticDefaults() {
-			ModIndex = (ushort)BeastCustomization.BeastPlayers.Count;
+			this.ModIndex = (ushort)BeastCustomization.BeastPlayers.Count;
 			BeastCustomization.BeastPlayers.Add(this.Index);
+			BeastCustomization.BeastPlayersByType.Add(this.GetType(), this.ModIndex);
 			SetBeastPlayerStaticDefaults();
 		}
 		public virtual void SetBeastPlayerStaticDefaults() { }
@@ -56,6 +57,8 @@ namespace BeastCustomization {
 		public abstract void ImportData(TagCompound tag);
 		public abstract void NetSend(BinaryWriter writer);
 		public abstract void NetRecieve(BinaryReader reader);
+		public abstract void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs);
+		public abstract void HideVanillaDrawLayers(PlayerDrawSet drawInfo, out bool hideHead, out bool hideBody, out bool hideLegs);
 		public sealed override void SaveData(TagCompound tag) {
 			ExportData(tag);
 			tag["SavedPresets"] = Presets;
@@ -131,9 +134,18 @@ namespace BeastCustomization {
 	}
 
 	public abstract class GenericHeadLayer : PlayerDrawLayer {
-		public override bool IsHeadLayer => true;
-		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Head, PlayerDrawLayers.FaceAcc);
-		protected override void Draw(ref PlayerDrawSet drawInfo) {
+		public sealed override bool IsHeadLayer => true;
+		public sealed override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			int boundIndex = BeastCustomization.BeastPlayersByType[BoundBeastPlayer];
+			(drawInfo.drawPlayer.ModPlayers[BeastCustomization.BeastPlayers[boundIndex]] as BeastPlayerBase)
+				.HideVanillaDrawLayers(drawInfo, out bool hideHead, out _, out _);
+			if (!hideHead) return false;
+			SharedModPlayer sharedModPlayer = drawInfo.drawPlayer.GetModPlayer<SharedModPlayer>();
+			if (sharedModPlayer?.current is null) return false;
+			return sharedModPlayer.current.ModIndex == boundIndex;
+		}
+		public sealed override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Head, PlayerDrawLayers.FaceAcc);
+		protected sealed override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
 			Vector2 Position = new Vector2((int)(drawInfo.Position.X + drawPlayer.width / 2f - drawPlayer.bodyFrame.Width / 2f - Main.screenPosition.X), (int)(drawInfo.Position.Y + drawPlayer.height - drawPlayer.bodyFrame.Height + 4f - Main.screenPosition.Y)) + drawPlayer.headPosition + drawInfo.headVect;
 			Rectangle? Frame = drawPlayer.bodyFrame;
@@ -144,11 +156,21 @@ namespace BeastCustomization {
 				drawInfo.DrawDataCache.Add(item);
 			}
 		}
+		public abstract Type BoundBeastPlayer { get; }
 		public abstract IEnumerable<(Texture2D texture, Color color, bool applyDye)> GetData(PlayerDrawSet drawInfo);
 	}
 	public abstract class GenericBodyLayer : PlayerDrawLayer {
-		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Torso, PlayerDrawLayers.OffhandAcc);
-		protected override void Draw(ref PlayerDrawSet drawInfo) {
+		public sealed override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			int boundIndex = BeastCustomization.BeastPlayersByType[BoundBeastPlayer];
+			(drawInfo.drawPlayer.ModPlayers[BeastCustomization.BeastPlayers[boundIndex]] as BeastPlayerBase)
+				.HideVanillaDrawLayers(drawInfo, out _, out bool hideBody, out _);
+			if (!hideBody) return false;
+			SharedModPlayer sharedModPlayer = drawInfo.drawPlayer.GetModPlayer<SharedModPlayer>();
+			if (sharedModPlayer?.current is null) return false;
+			return sharedModPlayer.current.ModIndex == boundIndex;
+		}
+		public sealed override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Torso, PlayerDrawLayers.OffhandAcc);
+		protected sealed override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
 			if (drawInfo.usesCompositeTorso) {
 				Rectangle Frame = drawInfo.compTorsoFrame;
@@ -176,11 +198,21 @@ namespace BeastCustomization {
 				}
 			}
 		}
+		public abstract Type BoundBeastPlayer { get; }
 		public abstract IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo);
 	}
 	public abstract class GenericArmLayer_Back : PlayerDrawLayer {
-		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Skin, PlayerDrawLayers.Leggings);
-		protected override void Draw(ref PlayerDrawSet drawInfo) {
+		public sealed override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			int boundIndex = BeastCustomization.BeastPlayersByType[BoundBeastPlayer];
+			(drawInfo.drawPlayer.ModPlayers[BeastCustomization.BeastPlayers[boundIndex]] as BeastPlayerBase)
+				.HideVanillaDrawLayers(drawInfo, out _, out bool hideBody, out _);
+			if (!hideBody) return false;
+			SharedModPlayer sharedModPlayer = drawInfo.drawPlayer.GetModPlayer<SharedModPlayer>();
+			if (sharedModPlayer?.current is null) return false;
+			return sharedModPlayer.current.ModIndex == boundIndex;
+		}
+		public sealed override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Skin, PlayerDrawLayers.Leggings);
+		protected sealed override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
 			if (drawInfo.usesCompositeTorso) {
 				Vector2 position = new Vector2((int)(drawInfo.Position.X - (drawInfo.drawPlayer.bodyFrame.Width / 2) + (drawInfo.drawPlayer.width / 2)), (int)(drawInfo.Position.Y + drawInfo.drawPlayer.height - drawInfo.drawPlayer.bodyFrame.Height + 4f)) + drawInfo.drawPlayer.bodyPosition + new Vector2(drawInfo.drawPlayer.bodyFrame.Width / 2, drawInfo.drawPlayer.bodyFrame.Height / 2) - Main.screenPosition;
@@ -210,9 +242,19 @@ namespace BeastCustomization {
 				}
 			}
 		}
+		public abstract Type BoundBeastPlayer { get; }
 		public abstract IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo);
 	}
 	public abstract class GenericArmLayer_Front : PlayerDrawLayer {
+		public sealed override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			int boundIndex = BeastCustomization.BeastPlayersByType[BoundBeastPlayer];
+			(drawInfo.drawPlayer.ModPlayers[BeastCustomization.BeastPlayers[boundIndex]] as BeastPlayerBase)
+				.HideVanillaDrawLayers(drawInfo, out _, out bool hideBody, out _);
+			if (!hideBody) return false;
+			SharedModPlayer sharedModPlayer = drawInfo.drawPlayer.GetModPlayer<SharedModPlayer>();
+			if (sharedModPlayer?.current is null) return false;
+			return sharedModPlayer.current.ModIndex == boundIndex;
+		}
 		public sealed override Position GetDefaultPosition() => new Between(PlayerDrawLayers.ArmOverItem, PlayerDrawLayers.HandOnAcc);
 		protected sealed override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
@@ -251,9 +293,19 @@ namespace BeastCustomization {
 				}
 			}
 		}
+		public abstract Type BoundBeastPlayer { get; }
 		public abstract IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo);
 	}
 	public abstract class GenericLegsLayer : PlayerDrawLayer {
+		public sealed override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			int boundIndex = BeastCustomization.BeastPlayersByType[BoundBeastPlayer];
+			(drawInfo.drawPlayer.ModPlayers[BeastCustomization.BeastPlayers[boundIndex]] as BeastPlayerBase)
+				.HideVanillaDrawLayers(drawInfo, out _, out _, out bool hideLegs);
+			if (!hideLegs) return false;
+			SharedModPlayer sharedModPlayer = drawInfo.drawPlayer.GetModPlayer<SharedModPlayer>();
+			if (sharedModPlayer?.current is null) return false;
+			return sharedModPlayer.current.ModIndex == boundIndex;
+		}
 		public sealed override Position GetDefaultPosition() => new Between(PlayerDrawLayers.Leggings, PlayerDrawLayers.Shoes);
 		protected sealed override void Draw(ref PlayerDrawSet drawInfo) {
 			Player drawPlayer = drawInfo.drawPlayer;
@@ -266,6 +318,7 @@ namespace BeastCustomization {
 				drawInfo.DrawDataCache.Add(item);
 			}
 		}
+		public abstract Type BoundBeastPlayer { get; }
 		public abstract IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo);
 	}
 }
