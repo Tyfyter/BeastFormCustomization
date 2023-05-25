@@ -372,7 +372,7 @@ namespace BeastCustomization {
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
 				if (slot > 0) {
-					if (slot < ArmorIDs.Head.Count) {
+					if (slot < ArmorIDs.Body.Count) {
 						Main.instance.LoadArmorBody(slot);
 					}
 					yield return (
@@ -402,7 +402,7 @@ namespace BeastCustomization {
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
 				if (slot > 0) {
-					if (slot < ArmorIDs.Head.Count) {
+					if (slot < ArmorIDs.Body.Count) {
 						Main.instance.LoadArmorBody(slot);
 					}
 					yield return (
@@ -432,7 +432,7 @@ namespace BeastCustomization {
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
 				if (slot > 0) {
-					if (slot < ArmorIDs.Head.Count) {
+					if (slot < ArmorIDs.Body.Count) {
 						Main.instance.LoadArmorBody(slot);
 					}
 					yield return (
@@ -458,7 +458,7 @@ namespace BeastCustomization {
 			if (beastColorPlayer.applyLegsOver) {
 				int slot = beastColorPlayer.GetSlot(2);
 				if (slot > 0) {
-					if (slot < ArmorIDs.Head.Count) {
+					if (slot < ArmorIDs.Legs.Count) {
 						Main.instance.LoadArmorLegs(slot);
 					}
 					yield return (

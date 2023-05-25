@@ -152,7 +152,7 @@ namespace BeastCustomization {
 
 			foreach (var data in GetData(drawInfo)) {
 				DrawData item = new(data.texture, Position, Frame, data.color, drawPlayer.headRotation, drawInfo.headVect, 1f, drawInfo.playerEffect, 0);
-				if (data.applyDye) item.shader = drawPlayer.cHead;
+				if (data.applyDye) item.shader = drawInfo.cHead;
 				drawInfo.DrawDataCache.Add(item);
 			}
 		}
@@ -182,7 +182,7 @@ namespace BeastCustomization {
 
 				foreach (var data in GetData(drawInfo)) {
 					DrawData item = new DrawData(data.texture, Position, Frame, data.color, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
-						shader = drawPlayer.cBody
+						shader = drawInfo.cBody
 					};
 					drawInfo.DrawDataCache.Add(item);
 				}
@@ -192,7 +192,7 @@ namespace BeastCustomization {
 				Vector2 Position = new Vector2((int)(drawInfo.Position.X - Main.screenPosition.X - Frame.Width / 2f + drawPlayer.width / 2f), (int)(drawInfo.Position.Y - Main.screenPosition.Y + drawPlayer.height - Frame.Height + 4f)) + drawPlayer.bodyPosition + drawInfo.bodyVect;
 				foreach (var data in GetData(drawInfo)) {
 					DrawData item = new DrawData(data.texture, Position, Frame, data.color, drawPlayer.bodyRotation, drawInfo.bodyVect, 1f, drawInfo.playerEffect, 0) {
-						shader = drawPlayer.cBody
+						shader = drawInfo.cBody
 					};
 					drawInfo.DrawDataCache.Add(item);
 				}
@@ -312,10 +312,16 @@ namespace BeastCustomization {
 
 			Vector2 Position = new Vector2((int)(drawInfo.Position.X - Main.screenPosition.X - drawPlayer.bodyFrame.Width / 2f + drawPlayer.width / 2f), (int)(drawInfo.Position.Y - Main.screenPosition.Y + drawPlayer.height - drawPlayer.bodyFrame.Height + 4f)) + drawPlayer.legPosition + drawInfo.legVect;
 			Rectangle? Frame = drawPlayer.legFrame;
-			foreach (var data in GetData(drawInfo)) {
-				DrawData item = new DrawData(data.texture, Position, Frame, data.color, drawPlayer.legRotation, drawInfo.legVect, 1f, drawInfo.playerEffect, 0);
-				item.shader = drawPlayer.cLegs;
-				drawInfo.DrawDataCache.Add(item);
+			if (drawInfo.isSitting) {
+				foreach (var data in GetData(drawInfo)) {
+					Reflection.DrawSittingLegs(ref drawInfo, data.texture, data.color, drawInfo.cLegs);
+				}
+			} else {
+				foreach (var data in GetData(drawInfo)) {
+					DrawData item = new DrawData(data.texture, Position, Frame, data.color, drawPlayer.legRotation, drawInfo.legVect, 1f, drawInfo.playerEffect, 0);
+					item.shader = drawInfo.cLegs;
+					drawInfo.DrawDataCache.Add(item);
+				}
 			}
 		}
 		public abstract Type BoundBeastPlayer { get; }
