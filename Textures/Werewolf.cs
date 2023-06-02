@@ -13,6 +13,7 @@ namespace BeastCustomization.Textures {
 	public class Werewolf : ILoadable {
 		static AssetRepository Assets => ModContent.GetInstance<BeastCustomization>().Assets;
 		public static List<AutoCastingAsset<Texture2D>> HeadFurTextures { get; private set; }
+		public static List<AutoCastingAsset<Texture2D>> HeadSecondaryFurTextures { get; private set; }
 		public static AutoCastingAsset<Texture2D> EyesIrisTexture { get; private set; }
 		public static AutoCastingAsset<Texture2D> EyesScleraTexture { get; private set; }
 		public static List<AutoCastingAsset<Texture2D>> HeadTeethTextures { get; private set; }
@@ -20,17 +21,23 @@ namespace BeastCustomization.Textures {
 		public static List<AutoCastingAsset<Texture2D>> BodySecondaryFurTextures { get; private set; }
 		public static List<AutoCastingAsset<Texture2D>> BodyClawsTextures { get; private set; }
 		public static List<AutoCastingAsset<Texture2D>> LegsFurTextures { get; private set; }
+		public static List<AutoCastingAsset<Texture2D>> LegsSecondaryFurTextures { get; private set; }
 		public static List<AutoCastingAsset<Texture2D>> LegsClawsTextures { get; private set; }
 		public void Load(Mod mod) {
 			if (Main.netMode != NetmodeID.Server) {
 				HeadFurTextures = new();
+				HeadSecondaryFurTextures = new();
 				HeadTeethTextures = new();
+
 				BodyFurTextures = new();
 				BodySecondaryFurTextures = new();
 				BodyClawsTextures = new();
+
 				LegsFurTextures = new();
+				LegsSecondaryFurTextures = new();
 				LegsClawsTextures = new();
 				BeastCustomization.FillSpriteList(HeadFurTextures, "Textures/Werewolf/Head_Fur");
+				BeastCustomization.FillSpriteList(HeadSecondaryFurTextures, "Textures/Werewolf/Head_Secondary_Fur");
 				EyesIrisTexture = Assets.Request<Texture2D>("Textures/Werewolf/Head_Eyes_Iris");
 				EyesScleraTexture = Assets.Request<Texture2D>("Textures/Werewolf/Head_Eyes_White");
 				BeastCustomization.FillSpriteList(HeadTeethTextures, "Textures/Werewolf/Head_Teeth");
@@ -41,17 +48,21 @@ namespace BeastCustomization.Textures {
 
 				BeastCustomization.FillSpriteList(BodyClawsTextures, "Textures/Werewolf/Body_Claws");
 				BeastCustomization.FillSpriteList(LegsFurTextures, "Textures/Werewolf/Legs_Fur");
-				BeastCustomization.FillSpriteList(LegsFurTextures, "Textures/Werewolf/Legs_Fur_2");
+				BeastCustomization.FillSpriteList(LegsSecondaryFurTextures, "Textures/Werewolf/Legs_Secondary_Fur");
 				BeastCustomization.FillSpriteList(LegsClawsTextures, "Textures/Werewolf/Legs_Claws");
 			}
 		}
 		public void Unload() {
 			HeadFurTextures = null;
+			HeadSecondaryFurTextures = null;
 			HeadTeethTextures = null;
+
 			BodyFurTextures = null;
 			BodySecondaryFurTextures = null;
 			BodyClawsTextures = null;
+
 			LegsFurTextures = null;
+			LegsSecondaryFurTextures = null;
 			LegsClawsTextures = null;
 		}
 	}

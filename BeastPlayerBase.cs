@@ -1,11 +1,16 @@
 ﻿using BeastCustomization.Textures;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Mono.Cecil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Terraria;
@@ -27,9 +32,11 @@ namespace BeastCustomization {
 			return modPlayer;
 		}
 		public sealed override void SetStaticDefaults() {
-			this.ModIndex = (ushort)BeastCustomization.BeastPlayers.Count;
-			BeastCustomization.BeastPlayers.Add(this.Index);
-			BeastCustomization.BeastPlayersByType.Add(this.GetType(), this.ModIndex);
+			if (!BeastCustomization.BeastPlayersByType.ContainsKey(this.GetType())) {
+				this.ModIndex = (ushort)BeastCustomization.BeastPlayers.Count;
+				BeastCustomization.BeastPlayers.Add(this.Index);
+				BeastCustomization.BeastPlayersByType.Add(this.GetType(), this.ModIndex);
+			}
 			SetBeastPlayerStaticDefaults();
 		}
 		public virtual void SetBeastPlayerStaticDefaults() { }
@@ -131,8 +138,75 @@ namespace BeastCustomization {
 				return -1;
 			}
 		}
-	}
+		protected static Action<T, BinaryWriter> GenerateNetSend<T>() where T : BeastPlayerBase {
+			DynamicMethod netSendMethod = new DynamicMethod("_NetSend", null, new Type[] { typeof(T), typeof(BinaryWriter) }, true);
+			ILGenerator gen = netSendMethod.GetILGenerator();
 
+			foreach (var field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
+				if (field.GetCustomAttribute<JsonIgnoreAttribute>() is null) {
+					if (!Reflection.BinaryWriterWrites.TryGetValue(field.FieldType, out MethodInfo write)) {
+						write = typeof(BinaryWriter).GetMethod(
+							"Write",
+							BindingFlags.Public | BindingFlags.Instance,
+							new Type[] { field.FieldType }
+						);
+						Reflection.BinaryWriterWrites.Add(field.FieldType, write);
+					}
+					if (write is null) {
+						throw new Exception($"Could not find write method for type {field.FieldType}");
+					}
+					gen.Emit(OpCodes.Ldarg_1);
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldfld, field);
+					gen.Emit(write.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, write);
+				}
+			}
+
+			gen.Emit(OpCodes.Ret);
+
+			return netSendMethod.CreateDelegate<Action<T, BinaryWriter>>();
+		}
+		protected static Action<T, BinaryReader> GenerateNetRecieve<T>() where T : BeastPlayerBase {
+			DynamicMethod netRecieveMethod = new DynamicMethod($"{typeof(T).Name}_NetRecieve", null, new Type[] { typeof(T), typeof(BinaryReader) }, true);
+			ILGenerator gen = netRecieveMethod.GetILGenerator();
+			MethodInfo info = typeof(BeastPlayerBase).GetMethod("_test", BindingFlags.NonPublic | BindingFlags.Static);
+
+			foreach (var field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
+				if (field.GetCustomAttribute<JsonIgnoreAttribute>() is null) {
+					if (!Reflection.BinaryReaderReads.TryGetValue(field.FieldType, out MethodInfo read)) {
+						read = typeof(BinaryReader).GetMethods()
+							.Where(m => m.ReturnType == field.FieldType && m.Name == $"Read{field.FieldType.Name}")
+							.FirstOrDefault();
+						Reflection.BinaryReaderReads.Add(field.FieldType, read);
+					}
+					if (read is null) {
+						throw new Exception($"Could not find read method for type {field.FieldType}");
+					}
+					ParameterInfo[] parameters = read.GetParameters();
+					if (read.ReturnType != field.FieldType) {
+						throw new Exception($"Invalid read method provided for type {field.FieldType}");
+					}
+					gen.Emit(OpCodes.Ldstr, $"1 receiving {field} {read}");
+					gen.Emit(OpCodes.Call, info);
+
+					gen.Emit(OpCodes.Ldarg_1);
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(read.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, read);
+					gen.Emit(OpCodes.Stfld, field);
+
+					gen.Emit(OpCodes.Ldstr, $"2 receiving {field} {read}");
+					gen.Emit(OpCodes.Call, info);
+				}
+			}
+
+			gen.Emit(OpCodes.Ret);
+
+			return netRecieveMethod.CreateDelegate<Action<T, BinaryReader>>();
+		}
+		static void _test(string d) {
+			BeastCustomization.DebugLogger.Debug(d);
+		}
+	}
 	public abstract class GenericHeadLayer : PlayerDrawLayer {
 		public sealed override bool IsHeadLayer => true;
 		public sealed override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {

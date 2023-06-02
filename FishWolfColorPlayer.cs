@@ -126,116 +126,24 @@ namespace BeastCustomization {
 		[Label("Claws Color")]
 		public Color clawsColor = new Color(222, 206, 192);
 
-		int oldHeadPrimaryStyle;
-		int oldHeadSecondaryStyle;
-		int oldEyesIrisStyle;
-		int oldEyesScleraStyle;
-		int oldHeadTeethStyle;
-		int oldBodyPrimaryStyle;
-		int oldBodySecondaryStyle;
-		int oldBodyClawsStyle;
-		int oldLegsPrimaryStyle;
-		int oldLegsSecondaryStyle;
-		int oldLegsClawsStyle;
-		bool oldEyesGlow;
-		bool oldEyesDye;
-		Color oldEyesIrisColor;
-		Color oldEyesScleraColor;
-		Color oldHeadTeethColor;
-		Color oldHeadSecondaryColor;
-		Color oldPrimaryColor;
-		Color oldBodySecondaryColor;
-		Color oldClawsColor;
-		bool oldApplyHead;
-		bool oldApplyBody;
-		bool oldApplyCloaks;
-		bool oldApplyLegs;
-		bool oldApplyHeadOver;
-		bool oldApplyBodyOver;
-		bool oldApplyLegsOver;
+		TagCompound oldData;
 		#endregion fields
 		public override string DisplayName => "Merwolf";
 		public override BeastPlayerBase CreateNew() => new FishWolfColorPlayer();
 		public override Type ResourceCacheType => typeof(Merwolf);
 		public override ref List<TagCompound> ConfigPresets => ref BeastCustomizationSavedPresets.Instance.fishWolfPresets;
-		public override bool IsActive => (Player.wereWolf && Player.merman) || (Player.forceWerewolf && Player.forceMerman);
+		public override bool IsActive => (
+			((Player.wereWolf && !Player.hideWolf) || Player.forceWerewolf)
+			&& ((Player.merman && !Player.hideMerman) || Player.forceMerman)
+		);
 		public override int Specificity => 2;
 		public override void StartCustomization() {
-			oldHeadPrimaryStyle = headPrimaryStyle;
-			oldHeadSecondaryStyle = headSecondaryStyle;
-			oldEyesIrisStyle = eyesIrisStyle;
-			oldEyesScleraStyle = eyesScleraStyle;
-			oldHeadTeethStyle = headTeethStyle;
-
-			oldBodyPrimaryStyle = bodyPrimaryStyle;
-			oldBodySecondaryStyle = bodySecondaryStyle;
-			oldBodyClawsStyle = bodyClawsStyle;
-
-			oldLegsPrimaryStyle = legsPrimaryStyle;
-			oldLegsSecondaryStyle = legsSecondaryStyle;
-			oldLegsClawsStyle = legsClawsStyle;
-
-			oldEyesGlow = eyesGlow;
-			oldEyesDye = eyesDye;
-
-			oldEyesIrisColor = eyesIrisColor;
-			oldEyesScleraColor = eyesScleraColor;
-
-			oldHeadTeethColor = headTeethColor;
-
-			oldPrimaryColor = primaryColor;
-			oldHeadSecondaryColor = headSecondaryColor;
-			oldBodySecondaryColor = bodySecondaryColor;
-
-			oldClawsColor = clawsColor;
-
-			oldApplyHead = applyHead;
-			oldApplyBody = applyBody;
-			oldApplyCloaks = applyCloaks;
-			oldApplyLegs = applyLegs;
-
-			oldApplyHeadOver = applyHeadOver;
-			oldApplyBodyOver = applyBodyOver;
-			oldApplyLegsOver = applyLegsOver;
+			oldData = new();
+			ExportData(oldData);
 		}
 		public override void FinishCustomization(bool overwrite) {
 			if (!overwrite) {
-				headPrimaryStyle = oldHeadPrimaryStyle;
-				headSecondaryStyle = oldHeadSecondaryStyle;
-				eyesIrisStyle = oldEyesIrisStyle;
-				eyesScleraStyle = oldEyesScleraStyle;
-				headTeethStyle = oldHeadTeethStyle;
-
-				bodyPrimaryStyle = oldBodyPrimaryStyle;
-				bodySecondaryStyle = oldBodySecondaryStyle;
-				bodyClawsStyle = oldBodyClawsStyle;
-
-				legsPrimaryStyle = oldLegsPrimaryStyle;
-				legsSecondaryStyle = oldLegsSecondaryStyle;
-				legsClawsStyle = oldLegsClawsStyle;
-
-				eyesGlow = oldEyesGlow;
-				eyesDye = oldEyesDye;
-
-				eyesIrisColor = oldEyesIrisColor;
-				eyesScleraColor = oldEyesScleraColor;
-
-				headTeethColor = oldHeadTeethColor;
-
-				primaryColor = oldPrimaryColor;
-				headSecondaryColor = oldHeadSecondaryColor;
-				bodySecondaryColor = oldBodySecondaryColor;
-
-				clawsColor = oldClawsColor;
-
-				applyHead = oldApplyHead;
-				applyBody = oldApplyBody;
-				applyCloaks = oldApplyCloaks;
-				applyLegs = oldApplyLegs;
-
-				applyHeadOver = oldApplyHeadOver;
-				applyBodyOver = oldApplyBodyOver;
-				applyLegsOver = oldApplyLegsOver;
+				ImportData(oldData ??= new());
 				SendData();
 			}
 		}
@@ -468,11 +376,8 @@ namespace BeastCustomization {
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
 				if (slot > 0) {
-					if (slot < ArmorIDs.Body.Count) {
-						Main.instance.LoadArmorBody(slot);
-					}
 					yield return (
-						drawInfo.drawPlayer.Male ? TextureAssets.ArmorBodyComposite[slot].Value : TextureAssets.FemaleBody[slot].Value,
+						TextureAssets.ArmorBodyComposite[slot].Value,
 						drawInfo.colorArmorBody
 					);
 				}

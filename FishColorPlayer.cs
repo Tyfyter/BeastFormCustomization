@@ -98,80 +98,21 @@ namespace BeastCustomization {
 		[Label("Secondary Scale Color")]
 		public Color scaleColor2 = new Color(168, 255, 106);
 
-		int oldHeadScaleStyle;
-		int oldHeadEyeStyle;
-		int oldHeadScaleStyle2;
-		int oldBodyScaleStyle;
-		int oldBodySecondaryScaleStyle;
-		int oldLegsScaleStyle;
-		int oldLegsClawsStyle;
-		bool oldEyesGlow;
-		bool oldEyesDye;
-		Color oldEyesIrisColor;
-		Color oldScaleColor;
-		Color oldScaleColor2;
-		bool oldApplyHead;
-		bool oldApplyBody;
-		bool oldApplyCloaks;
-		bool oldApplyLegs;
-		bool oldApplyHeadOver;
-		bool oldApplyBodyOver;
-		bool oldApplyLegsOver;
+		TagCompound oldData;
 		#endregion fields
 		public override string DisplayName => "Merfolk";
 		public override FishColorPlayer CreateNew() => new FishColorPlayer();
 		public override Type ResourceCacheType => typeof(Merfolk);
 		public override ref List<TagCompound> ConfigPresets => ref BeastCustomizationSavedPresets.Instance.fishPresets;
-		public override bool IsActive => Player.merman || Player.forceMerman;
+		public override bool IsActive => (Player.merman && !Player.hideMerman) || Player.forceMerman;
 		public override int Specificity => 1;
 		public override void StartCustomization() {
-			oldHeadScaleStyle = headScaleStyle;
-			oldHeadScaleStyle2 = headScaleStyle2;
-			oldHeadEyeStyle = headEyeStyle;
-
-			oldBodyScaleStyle = bodyScaleStyle;
-			oldBodySecondaryScaleStyle = bodySecondaryScaleStyle;
-
-			oldLegsScaleStyle = legsScaleStyle;
-			oldLegsClawsStyle = legsScaleStyle2;
-
-			oldEyesGlow = eyesGlow;
-			oldEyesDye = eyesDye;
-			oldEyesIrisColor = eyesColor;
-			oldScaleColor = scaleColor;
-			oldScaleColor2 = scaleColor2;
-			oldApplyHead = applyHead;
-			oldApplyBody = applyBody;
-			oldApplyCloaks = applyCloaks;
-			oldApplyLegs = applyLegs;
-			oldApplyHeadOver = applyHeadOver;
-			oldApplyBodyOver = applyBodyOver;
-			oldApplyLegsOver = applyLegsOver;
+			oldData = new();
+			ExportData(oldData);
 		}
 		public override void FinishCustomization(bool overwrite) {
 			if (!overwrite) {
-				headScaleStyle = oldHeadScaleStyle;
-				headScaleStyle2 = oldHeadScaleStyle2;
-				headEyeStyle = oldHeadEyeStyle;
-
-				bodyScaleStyle = oldBodyScaleStyle;
-				bodySecondaryScaleStyle = oldBodySecondaryScaleStyle;
-
-				legsScaleStyle = oldLegsScaleStyle;
-				legsScaleStyle2 = oldLegsClawsStyle;
-
-				eyesGlow = oldEyesGlow;
-				eyesDye = oldEyesDye;
-				eyesColor = oldEyesIrisColor;
-				scaleColor = oldScaleColor;
-				scaleColor2 = oldScaleColor2;
-				applyHead = oldApplyHead;
-				applyBody = oldApplyBody;
-				applyCloaks = oldApplyCloaks;
-				applyLegs = oldApplyLegs;
-				applyHeadOver = oldApplyHeadOver;
-				applyBodyOver = oldApplyBodyOver;
-				applyLegsOver = oldApplyLegsOver;
+				ImportData(oldData ??= new());
 				SendData();
 			}
 		}
@@ -345,7 +286,7 @@ namespace BeastCustomization {
 						Main.instance.LoadArmorBody(slot);
 					}
 					yield return (
-						drawInfo.drawPlayer.Male ? TextureAssets.ArmorBodyComposite[slot].Value : TextureAssets.FemaleBody[slot].Value,
+						TextureAssets.ArmorBodyComposite[slot].Value,
 						drawInfo.colorArmorBody
 					);
 				}
