@@ -1,4 +1,5 @@
 ﻿using BeastCustomization.Textures;
+using BeastCustomization.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
@@ -99,11 +100,13 @@ namespace BeastCustomization {
 		[Tooltip("Looks absolutely ridiculous with almost everything")]
 		public bool applyLegsOver = false;
 
-		[Label("Apply Hair Dye To Primary Fur")]
-		public bool applyHairDyePrimary = false;
+		[Label("Primary Fur Hair Dye")]
+		[CustomModConfigItem(typeof(HairDyeConfigElement))]
+		public Item primaryHairDye = new();
 
-		[Label("Apply Hair Dye To Secondary Fur")]
-		public bool applyHairDyeSecondary = false;
+		[Label("Secondary Fur Hair Dye")]
+		[CustomModConfigItem(typeof(HairDyeConfigElement))]
+		public Item secondaryHairDye = new();
 
 		[Label("Iris Color")]
 		public Color eyesIrisColor = new Color(242, 8, 46);
@@ -126,10 +129,8 @@ namespace BeastCustomization {
 		[JsonIgnore]
 		public Color FurColor {
 			get {
-				if (applyHairDyePrimary) {
-					if (Player.hairDye > 0) {
-						return GameShaders.Hair.GetColor(Player.hairDye, Player, Color.White);
-					}
+				if (primaryHairDye is not null && primaryHairDye.hairDye > -1) {
+					return GameShaders.Hair.GetColor(primaryHairDye.hairDye, Player, Color.White);
 				}
 				return furColor;
 			}
@@ -137,10 +138,8 @@ namespace BeastCustomization {
 		[JsonIgnore]
 		public Color FurColor2 {
 			get {
-				if (applyHairDyeSecondary) {
-					if (Player.hairDye > 0) {
-						return GameShaders.Hair.GetColor(Player.hairDye, Player, Color.White);
-					}
+				if (secondaryHairDye is not null && secondaryHairDye.hairDye > -1) {
+					return GameShaders.Hair.GetColor(secondaryHairDye.hairDye, Player, Color.White);
 				}
 				return furColor2;
 			}
@@ -157,15 +156,6 @@ namespace BeastCustomization {
 		public override void StartCustomization() {
 			oldData = new();
 			ExportData(oldData);
-			MemoryStream stream = new MemoryStream();
-			GenerateNetSend<WolfColorPlayer>()(this, new BinaryWriter(stream));
-			var other = new WolfColorPlayer();
-			GenerateNetRecieve<WolfColorPlayer>()(other, new BinaryReader(stream));
-			foreach (var field in typeof(WolfColorPlayer).GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
-				if (field.GetValue(other).Equals(field.GetValue(this))) {
-
-				}
-			}
 		}
 		public override void FinishCustomization(bool overwrite) {
 			if (!overwrite) {
@@ -201,8 +191,8 @@ namespace BeastCustomization {
 			tag["applyHeadOver"] = applyHeadOver;
 			tag["applyBodyOver"] = applyBodyOver;
 			tag["applyLegsOver"] = applyLegsOver;
-			tag["applyHairDyePrimary"] = applyHairDyePrimary;
-			tag["applyHairDyeSecondary"] = applyHairDyeSecondary;
+			tag["primaryHairDye"] = primaryHairDye;
+			tag["secondaryHairDye"] = secondaryHairDye;
 		}
 		public override void ImportData(TagCompound tag) {
 			if (tag.TryGet("headFurStyle", out int _headFurStyle)) headFurStyle = _headFurStyle;
@@ -214,6 +204,7 @@ namespace BeastCustomization {
 			if (tag.TryGet("bodyClawsStyle", out int _bodyClawsStyle)) bodyClawsStyle = _bodyClawsStyle;
 
 			if (tag.TryGet("legsFurStyle", out int _legsFurStyle)) legsFurStyle = _legsFurStyle;
+			if (tag.TryGet("legsSecondaryFurStyle", out int _legsSecondaryFurStyle)) legsSecondaryFurStyle = _legsSecondaryFurStyle;
 			if (tag.TryGet("legsClawsStyle", out int _legsClawsStyle)) legsClawsStyle = _legsClawsStyle;
 
 			if (tag.TryGet("eyesGlow", out bool _eyesGlow)) eyesGlow = _eyesGlow;
@@ -234,19 +225,21 @@ namespace BeastCustomization {
 			if (tag.TryGet("applyBodyOver", out bool _applyBodyOver)) applyBodyOver = _applyBodyOver;
 			if (tag.TryGet("applyCloakOver", out bool _applyCloakOver)) applyCloaks = _applyCloakOver;
 			if (tag.TryGet("applyLegsOver", out bool _applyLegsOver)) applyLegsOver = _applyLegsOver;
-			if (tag.TryGet("applyHairDyePrimary", out bool _applyHairDyePrimary)) applyHairDyePrimary = _applyHairDyePrimary;
-			if (tag.TryGet("applyHairDyeSecondary", out bool _applyHairDyeSecondary)) applyHairDyeSecondary = _applyHairDyeSecondary;
+			if (tag.TryGet("primaryHairDye", out Item _primaryHairDye)) primaryHairDye = _primaryHairDye;
+			if (tag.TryGet("secondaryHairDye", out Item _secondaryHairDye)) secondaryHairDye = _secondaryHairDye;
 			//Mod.Logger.Info($"loading {Player.name}, fur color: {furColor}");
 		}
 		public override void NetSend(BinaryWriter writer) {
-			BeastCustomization.DebugLogger.Info("NetSend");
-			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
 			writer.Write(headFurStyle);
+			writer.Write(headSecondaryFurStyle);
 			writer.Write(headTeethStyle);
+
 			writer.Write(bodyFurStyle);
 			writer.Write(bodySecondaryFurStyle);
 			writer.Write(bodyClawsStyle);
+
 			writer.Write(legsFurStyle);
+			writer.Write(legsSecondaryFurStyle);
 			writer.Write(legsClawsStyle);
 
 			writer.Write(eyesGlow);
@@ -266,19 +259,20 @@ namespace BeastCustomization {
 			writer.Write(applyHeadOver);
 			writer.Write(applyBodyOver);
 			writer.Write(applyLegsOver);
-			writer.Write(applyHairDyePrimary);
-			writer.Write(applyHairDyeSecondary);
-			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
+			Reflection.BinaryWriterWriteItem(writer, primaryHairDye);
+			Reflection.BinaryWriterWriteItem(writer, secondaryHairDye);
 		}
 		public override void NetRecieve(BinaryReader reader) {
-			BeastCustomization.DebugLogger.Info("NetRecieve");
-			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 			headFurStyle = reader.ReadInt32();
+			headSecondaryFurStyle = reader.ReadInt32();
 			headTeethStyle = reader.ReadInt32();
+
 			bodyFurStyle = reader.ReadInt32();
 			bodySecondaryFurStyle = reader.ReadInt32();
 			bodyClawsStyle = reader.ReadInt32();
+
 			legsFurStyle = reader.ReadInt32();
+			legsSecondaryFurStyle = reader.ReadInt32();
 			legsClawsStyle = reader.ReadInt32();
 
 			eyesGlow = reader.ReadBoolean();
@@ -298,9 +292,8 @@ namespace BeastCustomization {
 			applyHeadOver = reader.ReadBoolean();
 			applyBodyOver = reader.ReadBoolean();
 			applyLegsOver = reader.ReadBoolean();
-			applyHairDyePrimary = reader.ReadBoolean();
-			applyHairDyeSecondary = reader.ReadBoolean();
-			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
+			primaryHairDye = Reflection.BinaryReaderReadItem(reader);
+			secondaryHairDye = Reflection.BinaryReaderReadItem(reader);
 		}
 		internal const bool enabled = true;
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
@@ -322,6 +315,11 @@ namespace BeastCustomization {
 			yield return (
 				Werewolf.HeadFurTextures[beastColorPlayer.headFurStyle],
 				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.FurColor),
+				true
+			);
+			yield return (
+				Werewolf.HeadSecondaryFurTextures[beastColorPlayer.headSecondaryFurStyle],
+				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.FurColor2),
 				true
 			);
 			yield return (
@@ -455,6 +453,10 @@ namespace BeastCustomization {
 			yield return (
 				Werewolf.LegsFurTextures[beastColorPlayer.legsFurStyle],
 				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.FurColor)
+			);
+			yield return (
+				Werewolf.LegsSecondaryFurTextures[beastColorPlayer.legsSecondaryFurStyle],
+				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.FurColor2)
 			);
 			yield return (
 				Werewolf.LegsClawsTextures[beastColorPlayer.legsClawsStyle],

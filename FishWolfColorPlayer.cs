@@ -1,4 +1,5 @@
 ﻿using BeastCustomization.Textures;
+using BeastCustomization.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
@@ -105,6 +106,14 @@ namespace BeastCustomization {
 		[Tooltip("Looks absolutely ridiculous with almost everything")]
 		public bool applyLegsOver = false;
 
+		[Label("Primary Fur Hair Dye")]
+		[CustomModConfigItem(typeof(HairDyeConfigElement))]
+		public Item primaryHairDye = new();
+
+		/*[Label("Secondary Fur Hair Dye")]
+		[CustomModConfigItem(typeof(HairDyeConfigElement))]
+		public Item secondaryHairDye = new();*/
+
 		[Label("Iris Color")]
 		public Color eyesIrisColor = new Color(242, 8, 46);
 
@@ -125,6 +134,16 @@ namespace BeastCustomization {
 
 		[Label("Claws Color")]
 		public Color clawsColor = new Color(222, 206, 192);
+
+		[JsonIgnore]
+		public Color PrimaryColor {
+			get {
+				if (primaryHairDye is not null && primaryHairDye.hairDye > -1) {
+					return GameShaders.Hair.GetColor(primaryHairDye.hairDye, Player, Color.White);
+				}
+				return primaryColor;
+			}
+		}
 
 		TagCompound oldData;
 		#endregion fields
@@ -167,7 +186,7 @@ namespace BeastCustomization {
 			tag["eyesIrisColor"] = eyesIrisColor;
 			tag["eyesScleraColor"] = eyesScleraColor;
 			tag["headTeethColor"] = headTeethColor;
-			tag["primaryColor"] = primaryColor;
+			tag["primaryColor"] = PrimaryColor;
 			tag["headSecondaryColor"] = headSecondaryColor;
 			tag["bodySecondaryColor"] = bodySecondaryColor;
 			tag["clawsColor"] = clawsColor;
@@ -180,6 +199,7 @@ namespace BeastCustomization {
 			tag["applyHeadOver"] = applyHeadOver;
 			tag["applyBodyOver"] = applyBodyOver;
 			tag["applyLegsOver"] = applyLegsOver;
+			tag["primaryHairDye"] = primaryHairDye;
 		}
 		public override void ImportData(TagCompound tag) {
 			if (tag.TryGet("headPrimaryStyle", out int tempHeadPrimaryStyle)) headPrimaryStyle = tempHeadPrimaryStyle;
@@ -188,12 +208,12 @@ namespace BeastCustomization {
 			if (tag.TryGet("headScleraStyle", out int tempHeadScleraStyle)) eyesScleraStyle = tempHeadScleraStyle;
 			if (tag.TryGet("headTeethStyle", out int tempHeadTeethStyle)) headTeethStyle = tempHeadTeethStyle;
 
-			if (tag.TryGet("bodyFurStyle", out int tempBodyFurStyle)) bodyPrimaryStyle = tempBodyFurStyle;
-			if (tag.TryGet("bodySecondaryFurStyle", out int tempBodySecondaryStyle)) bodySecondaryStyle = tempBodySecondaryStyle;
+			if (tag.TryGet("bodyPrimaryStyle", out int tempBodyFurStyle)) bodyPrimaryStyle = tempBodyFurStyle;
+			if (tag.TryGet("bodySecondaryStyle", out int tempBodySecondaryStyle)) bodySecondaryStyle = tempBodySecondaryStyle;
 			if (tag.TryGet("bodyClawsStyle", out int tempBodyClawsStyle)) bodyClawsStyle = tempBodyClawsStyle;
 
-			if (tag.TryGet("legsFurStyle", out int tempLegsPrimaryStyle)) legsPrimaryStyle = tempLegsPrimaryStyle;
-			if (tag.TryGet("legsFurStyle", out int tempLegsSecondaryStyle)) legsSecondaryStyle = tempLegsSecondaryStyle;
+			if (tag.TryGet("legsPrimaryStyle", out int tempLegsPrimaryStyle)) legsPrimaryStyle = tempLegsPrimaryStyle;
+			if (tag.TryGet("legsSecondaryStyle", out int tempLegsSecondaryStyle)) legsSecondaryStyle = tempLegsSecondaryStyle;
 			if (tag.TryGet("legsClawsStyle", out int tempLegsClawsStyle)) legsClawsStyle = tempLegsClawsStyle;
 
 			if (tag.TryGet("eyesGlow", out bool tempEyesGlow)) eyesGlow = tempEyesGlow;
@@ -215,14 +235,14 @@ namespace BeastCustomization {
 			if (tag.TryGet("applyHeadOver", out bool tempApplyHeadOver)) applyHeadOver = tempApplyHeadOver;
 			if (tag.TryGet("applyBodyOver", out bool tempApplyBodyOver)) applyBodyOver = tempApplyBodyOver;
 			if (tag.TryGet("applyLegsOver", out bool tempApplyLegsOver)) applyLegsOver = tempApplyLegsOver;
+			if (tag.TryGet("primaryHairDye", out Item _primaryHairDye)) primaryHairDye = _primaryHairDye;
 			//Mod.Logger.Info($"loading {Player.name}, fur color: {furColor}");
 		}
 		public override void NetSend(BinaryWriter writer) {
-			BeastCustomization.DebugLogger.Info("NetSend");
-			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
 			writer.Write(headPrimaryStyle);
 			writer.Write(headSecondaryStyle);
 			writer.Write(eyesIrisStyle);
+			writer.Write(eyesScleraStyle);
 			writer.Write(headTeethStyle);
 
 			writer.Write(bodyPrimaryStyle);
@@ -241,7 +261,7 @@ namespace BeastCustomization {
 
 			writer.Write(headTeethColor.PackedValue);
 
-			writer.Write(primaryColor.PackedValue);
+			writer.Write(PrimaryColor.PackedValue);
 			writer.Write(headSecondaryColor.PackedValue);
 			writer.Write(bodySecondaryColor.PackedValue);
 
@@ -255,14 +275,12 @@ namespace BeastCustomization {
 			writer.Write(applyHeadOver);
 			writer.Write(applyBodyOver);
 			writer.Write(applyLegsOver);
-			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
 		}
 		public override void NetRecieve(BinaryReader reader) {
-			BeastCustomization.DebugLogger.Info("NetRecieve");
-			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 			headPrimaryStyle = reader.ReadInt32();
 			headSecondaryStyle = reader.ReadInt32();
 			eyesIrisStyle = reader.ReadInt32();
+			eyesScleraStyle = reader.ReadInt32();
 			headTeethStyle = reader.ReadInt32();
 
 			bodyPrimaryStyle = reader.ReadInt32();
@@ -295,7 +313,6 @@ namespace BeastCustomization {
 			applyHeadOver = reader.ReadBoolean();
 			applyBodyOver = reader.ReadBoolean();
 			applyLegsOver = reader.ReadBoolean();
-			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 		}
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
 			applyHead = this.applyHead;
@@ -315,7 +332,7 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.HeadPrimaryTextures[beastColorPlayer.headPrimaryStyle],
-				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.primaryColor),
+				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.PrimaryColor),
 				true
 			);
 			yield return (
@@ -363,7 +380,7 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.BodyPrimaryTextures[beastColorPlayer.bodyPrimaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.primaryColor)
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.PrimaryColor)
 			);
 			yield return (
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle],
@@ -390,7 +407,7 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.BodyPrimaryTextures[beastColorPlayer.bodyPrimaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.primaryColor)
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.PrimaryColor)
 			);
 			yield return (
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle],
@@ -420,7 +437,7 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.BodyPrimaryTextures[beastColorPlayer.bodyPrimaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.primaryColor)
+				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.PrimaryColor)
 			);
 			yield return (
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle],
@@ -450,7 +467,7 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.LegsPrimaryTextures[beastColorPlayer.legsPrimaryStyle],
-				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.primaryColor)
+				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.PrimaryColor)
 			);
 			yield return (
 				Merwolf.LegsSecondaryTextures[beastColorPlayer.legsSecondaryStyle],

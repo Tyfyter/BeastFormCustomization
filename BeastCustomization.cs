@@ -48,6 +48,11 @@ namespace BeastCustomization {
 			get => beastPlayersByType ??= new();
 			private set => beastPlayersByType = value;
 		}
+		static List<int> hairDyes;
+		public static List<int> HairDyes {
+			get => hairDyes ??= new();
+			private set => hairDyes = value;
+		}
 		public static ModKeybind OpenMenuHotkey { get; private set; }
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightLock;
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightHover;
@@ -66,6 +71,7 @@ namespace BeastCustomization {
 		}
 		public override void Unload() {
 			BeastPlayers = null;
+			HairDyes = null;
 			SelectorEndTexture = null;
 			SelectorMidTexture = null;
 			ButtonEndTexture = null;
@@ -109,6 +115,14 @@ namespace BeastCustomization {
 					case 1:
 					(Main.LocalPlayer.ModPlayers[BeastPlayers[reader.ReadUInt16()]] as BeastPlayerBase).SendData(reader.ReadInt16());
 					break;
+				}
+			}
+		}
+		public override void PostSetupContent() {
+			HairDyes.Add(ItemID.HairDyeRemover);
+			foreach (var item in ContentSamples.ItemsByType.Values) {
+				if (item.hairDye > -1 && item.type != ItemID.HairDyeRemover) {
+					HairDyes.Add(item.type);
 				}
 			}
 		}
@@ -363,6 +377,19 @@ namespace BeastCustomization {
 			spriteBatch.Draw(BeastCustomization.SelectorEndTexture, bottomRect, new Rectangle(0, 0, 208, 26), color, 0, default, SpriteEffects.FlipVertically, 0);
 			//spriteBatch.Draw(TextureAssets.InventoryBack2.Value, dimensions, null, color, 0, default, SpriteEffects.None, 0);
 
+		}
+		protected override void DrawChildren(SpriteBatch spriteBatch) {
+			base.DrawChildren(spriteBatch);
+			if (Main.hoverItemName != null && Main.hoverItemName != "") {
+				Main.LocalPlayer.cursorItemIconEnabled = false;
+				if (Main.SettingsEnabled_OpaqueBoxBehindTooltips) {
+					Main.instance.MouseText(Main.hoverItemName, Main.rare, 0, Main.mouseX + 6, Main.mouseY + 6);
+				} else {
+					Main.instance.MouseText(Main.hoverItemName, Main.rare, 0);
+				}
+				Main.mouseText = true;
+				Main.hoverItemName = null;
+			}
 		}
 	}
 	public class CustomizationMenuList : UIElement {

@@ -160,8 +160,6 @@ namespace BeastCustomization {
 			//Mod.Logger.Info($"loading {Player.name}, scale color: {scaleColor}");
 		}
 		public override void NetSend(BinaryWriter writer) {
-			BeastCustomization.DebugLogger.Info("NetSend");
-			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
 			writer.Write(headScaleStyle);
 			writer.Write(headScaleStyle2);
 			writer.Write(headEyeStyle);
@@ -186,11 +184,8 @@ namespace BeastCustomization {
 			writer.Write(applyHeadOver);
 			writer.Write(applyBodyOver);
 			writer.Write(applyLegsOver);
-			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position);
 		}
 		public override void NetRecieve(BinaryReader reader) {
-			BeastCustomization.DebugLogger.Info("NetRecieve");
-			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 			headScaleStyle = reader.ReadInt32();
 			headScaleStyle2 = reader.ReadInt32();
 			headEyeStyle = reader.ReadInt32();
@@ -215,7 +210,6 @@ namespace BeastCustomization {
 			applyHeadOver = reader.ReadBoolean();
 			applyBodyOver = reader.ReadBoolean();
 			applyLegsOver = reader.ReadBoolean();
-			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position);
 		}
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
 			applyHead = this.applyHead;

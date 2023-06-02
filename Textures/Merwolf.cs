@@ -54,6 +54,7 @@ namespace BeastCustomization.Textures {
 
 
 				BeastCustomization.FillSpriteList(HeadPrimaryTextures, "Textures/Werewolf/Head_Fur");
+				BeastCustomization.FillSpriteList(HeadSecondaryTextures, "Textures/Werewolf/Head_Secondary_Fur");
 				EyesIrisTextures.Add(Assets.Request<Texture2D>("Textures/Werewolf/Head_Eyes_Iris"));
 				EyesScleraTextures.Add(Assets.Request<Texture2D>("Textures/Werewolf/Head_Eyes_White"));
 				BeastCustomization.FillSpriteList(HeadTeethTextures, "Textures/Werewolf/Head_Teeth");
@@ -63,7 +64,7 @@ namespace BeastCustomization.Textures {
 				BeastCustomization.FillSpriteList(BodyClawsTextures, "Textures/Werewolf/Body_Claws", 2);
 
 				BeastCustomization.FillSpriteList(LegsPrimaryTextures, "Textures/Werewolf/Legs_Fur");
-				BeastCustomization.FillSpriteList(LegsPrimaryTextures, "Textures/Werewolf/Legs_Fur_2");
+				BeastCustomization.FillSpriteList(LegsSecondaryTextures, "Textures/Werewolf/Legs_Secondary_Fur");
 				BeastCustomization.FillSpriteList(LegsClawsTextures, "Textures/Werewolf/Legs_Claws", 2);
 			}
 		}

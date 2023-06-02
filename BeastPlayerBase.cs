@@ -138,73 +138,78 @@ namespace BeastCustomization {
 				return -1;
 			}
 		}
-		protected static Action<T, BinaryWriter> GenerateNetSend<T>() where T : BeastPlayerBase {
-			DynamicMethod netSendMethod = new DynamicMethod("_NetSend", null, new Type[] { typeof(T), typeof(BinaryWriter) }, true);
-			ILGenerator gen = netSendMethod.GetILGenerator();
+		/// <summary>
+		/// checks if NetSend and NetReceive properly cover all fields
+		/// </summary>
+		internal bool CheckSync() {
+			return CheckIntegrity((BeastPlayerBase first, BeastPlayerBase second) => {
+				MemoryStream stream = new MemoryStream();
+				first.NetSend(new BinaryWriter(stream));
+				stream.Position = 0;
+				second.NetRecieve(new BinaryReader(stream));
+			}, "{0} field {1} not syncing properly"
+			);
+		}
+		/// <summary>
+		/// checks if NetSend and NetReceive properly cover all fields
+		/// </summary>
+		internal bool CheckSave() {
+			return CheckIntegrity((BeastPlayerBase first, BeastPlayerBase second) => {
+				TagCompound tag = new TagCompound();
+				first.ExportData(tag);
+				second.ImportData(tag);
+			}, "{0} field {1} not saving properly"
+			);
+		}
+		internal bool CheckIntegrity(Action<BeastPlayerBase, BeastPlayerBase> action, string text) {
+			static bool Compare(FieldInfo field, BeastPlayerBase first, BeastPlayerBase second) {
+				switch (field.FieldType.Name) {
+					case nameof(Item):
+					return ((Item)field.GetValue(second))?.type == ((Item)field.GetValue(first))?.type;
 
-			foreach (var field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
-				if (field.GetCustomAttribute<JsonIgnoreAttribute>() is null) {
-					if (!Reflection.BinaryWriterWrites.TryGetValue(field.FieldType, out MethodInfo write)) {
-						write = typeof(BinaryWriter).GetMethod(
-							"Write",
-							BindingFlags.Public | BindingFlags.Instance,
-							new Type[] { field.FieldType }
-						);
-						Reflection.BinaryWriterWrites.Add(field.FieldType, write);
-					}
-					if (write is null) {
-						throw new Exception($"Could not find write method for type {field.FieldType}");
-					}
-					gen.Emit(OpCodes.Ldarg_1);
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldfld, field);
-					gen.Emit(write.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, write);
+					default:
+					return field.GetValue(second).Equals(field.GetValue(first));
 				}
 			}
+			bool fullySyncing = true;
+			BeastPlayerBase first = CreateNew();
+			BeastPlayerBase second = CreateNew();
+			var fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+			foreach (var field in fields) {
+				switch (field.FieldType.Name) {
+					case nameof(Int32):
+					field.SetValue(second, ~((Int32)field.GetValue(first)));
+					break;
 
-			gen.Emit(OpCodes.Ret);
+					case nameof(Boolean):
+					field.SetValue(second, !((Boolean)field.GetValue(first)));
+					break;
 
-			return netSendMethod.CreateDelegate<Action<T, BinaryWriter>>();
-		}
-		protected static Action<T, BinaryReader> GenerateNetRecieve<T>() where T : BeastPlayerBase {
-			DynamicMethod netRecieveMethod = new DynamicMethod($"{typeof(T).Name}_NetRecieve", null, new Type[] { typeof(T), typeof(BinaryReader) }, true);
-			ILGenerator gen = netRecieveMethod.GetILGenerator();
-			MethodInfo info = typeof(BeastPlayerBase).GetMethod("_test", BindingFlags.NonPublic | BindingFlags.Static);
+					case nameof(Item):
+					field.SetValue(second, new Item(((((Item)field.GetValue(first))?.type ?? 0) + 1) % 7));
+					break;
 
-			foreach (var field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
-				if (field.GetCustomAttribute<JsonIgnoreAttribute>() is null) {
-					if (!Reflection.BinaryReaderReads.TryGetValue(field.FieldType, out MethodInfo read)) {
-						read = typeof(BinaryReader).GetMethods()
-							.Where(m => m.ReturnType == field.FieldType && m.Name == $"Read{field.FieldType.Name}")
-							.FirstOrDefault();
-						Reflection.BinaryReaderReads.Add(field.FieldType, read);
-					}
-					if (read is null) {
-						throw new Exception($"Could not find read method for type {field.FieldType}");
-					}
-					ParameterInfo[] parameters = read.GetParameters();
-					if (read.ReturnType != field.FieldType) {
-						throw new Exception($"Invalid read method provided for type {field.FieldType}");
-					}
-					gen.Emit(OpCodes.Ldstr, $"1 receiving {field} {read}");
-					gen.Emit(OpCodes.Call, info);
-
-					gen.Emit(OpCodes.Ldarg_1);
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(read.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, read);
-					gen.Emit(OpCodes.Stfld, field);
-
-					gen.Emit(OpCodes.Ldstr, $"2 receiving {field} {read}");
-					gen.Emit(OpCodes.Call, info);
+					case nameof(Color):
+					Color changeColor = (Color)field.GetValue(first);
+					changeColor.PackedValue = ~changeColor.PackedValue;
+					field.SetValue(second, changeColor);
+					break;
 				}
 			}
-
-			gen.Emit(OpCodes.Ret);
-
-			return netRecieveMethod.CreateDelegate<Action<T, BinaryReader>>();
-		}
-		static void _test(string d) {
-			BeastCustomization.DebugLogger.Debug(d);
+			foreach (var field in fields) {
+				if (Compare(field, first, second)) {
+					Main.NewText($"{field.DeclaringType.Name} field {field.Name} not changed properly");
+					fullySyncing = false;
+				}
+			}
+			action(first, second);
+			foreach (var field in fields) {
+				if (!Compare(field, first, second)) {
+					Main.NewText(string.Format(text, field.DeclaringType.Name, field.Name));
+					fullySyncing = false;
+				}
+			}
+			return fullySyncing;
 		}
 	}
 	public abstract class GenericHeadLayer : PlayerDrawLayer {
