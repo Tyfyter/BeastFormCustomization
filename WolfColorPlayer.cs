@@ -476,4 +476,31 @@ namespace BeastCustomization {
 			}
 		}
 	}
+	public class Werewolf_Shampoo_Layer : PlayerDrawLayer {
+		public sealed override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
+			return drawInfo.drawPlayer.leinforsHair && drawInfo.shadow == 0f && Main.rgbToHsl(drawInfo.colorArmorBody).Z > 0.15f && drawInfo.drawPlayer.GetModPlayer<SharedModPlayer>()?.current is WolfColorPlayer;
+		}
+		public override Position GetDefaultPosition() => new Between(PlayerDrawLayers.LeinforsHairShampoo, PlayerDrawLayers.Backpacks);
+		protected override void Draw(ref PlayerDrawSet drawInfo) {
+			if (Main.rand.NextBool(30)) {
+				Player drawPlayer = drawInfo.drawPlayer;
+				int dust = Dust.NewDust(
+					drawPlayer.position,
+					drawPlayer.width,
+					drawPlayer.height,
+					DustID.TreasureSparkle,
+					0f,
+					0f,
+					150,
+					default(Color),
+					0.3f
+				);
+				Main.dust[dust].fadeIn = 1f;
+				Main.dust[dust].velocity *= 0.1f;
+				Main.dust[dust].noLight = true;
+				Main.dust[dust].shader = GameShaders.Armor.GetSecondaryShader(drawInfo.drawPlayer.cLeinShampoo, drawInfo.drawPlayer);
+				drawInfo.DustCache.Add(dust);
+			}
+		}
+	}
 }
