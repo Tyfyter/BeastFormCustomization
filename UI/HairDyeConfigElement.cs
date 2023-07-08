@@ -34,7 +34,7 @@ namespace BeastCustomization.UI {
 					Left = new StyleDimension(left, 0),
 					Top = new StyleDimension(top, 0)
 				};
-				element.OnClick += (_, _) => {
+				element.OnLeftClick += (_, _) => {
 					Value.SetDefaults(type == ItemID.HairDyeRemover ? 0 : type);
 				};
 				Append(element);

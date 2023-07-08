@@ -86,7 +86,7 @@ namespace BeastCustomization {
 				}
 			}
 		}
-		public override void OnEnterWorld(Player player) {
+		public override void OnEnterWorld() {
 			SendData();
 			initialized = false;
 		}

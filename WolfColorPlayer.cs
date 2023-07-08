@@ -159,7 +159,7 @@ namespace BeastCustomization {
 		}
 		public override void FinishCustomization(bool overwrite) {
 			if (!overwrite) {
-				ImportData(oldData??=new());
+				ImportData(oldData ??= new());
 				SendData();
 			}
 		}
@@ -182,7 +182,7 @@ namespace BeastCustomization {
 			tag["eyesScleraColor"] = eyesScleraColor;
 			tag["headTeethColor"] = headTeethColor;
 			tag["furColor"] = furColor;
-			tag["furColor2"] = FurColor2;
+			tag["furColor2"] = furColor2;
 			tag["clawsColor"] = clawsColor;
 			tag["applyHead"] = applyHead;
 			tag["applyBody"] = applyBody;
@@ -249,7 +249,7 @@ namespace BeastCustomization {
 			writer.Write(eyesScleraColor.PackedValue);
 			writer.Write(headTeethColor.PackedValue);
 			writer.Write(furColor.PackedValue);
-			writer.Write(FurColor2.PackedValue);
+			writer.Write(furColor2.PackedValue);
 			writer.Write(clawsColor.PackedValue);
 
 			writer.Write(applyHead);
@@ -306,6 +306,22 @@ namespace BeastCustomization {
 			hideHead = !applyHead || GetSlot(0) == -1;
 			hideBody = !applyBody || GetSlot(1) == -1;
 			hideLegs = !applyLegs || GetSlot(2) == -1;
+		}
+		public override void PreUpdate() {
+			int hairDye = Player.hairDye;
+			try {
+				if (primaryHairDye is not null) {
+					Player.hairDye = primaryHairDye.hairDye;
+					Player.UpdateHairDyeDust();
+				}
+			} catch (Exception) { }
+			try {
+				if (secondaryHairDye is not null) {
+					Player.hairDye = secondaryHairDye.hairDye;
+					Player.UpdateHairDyeDust();
+				}
+			} catch (Exception) { }
+			Player.hairDye = hairDye;
 		}
 	}
 	public class Werewolf_Head_Layer : GenericHeadLayer {

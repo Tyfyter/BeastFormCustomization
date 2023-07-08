@@ -15,6 +15,7 @@ using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.GameContent;
+using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
 using Terraria.ID;
@@ -227,7 +228,7 @@ namespace BeastCustomization {
 			CustomizationMenu customizationMenu = new CustomizationMenu(index);
 			Append(customizationMenu);
 			PresetsMenu presetsMenu = new PresetsMenu(index);
-			presetsMenu.Left.Pixels += 416f * scale.X;
+			presetsMenu.Left.Pixels += (416f + 10) * scale.X;
 			Append(presetsMenu);
 		}
 	}
@@ -235,6 +236,7 @@ namespace BeastCustomization {
 		public float totalHeight;
 		CustomizationMenuList listWrapper;
 		CustomizationMenuList listWrapper2;
+		UIScrollbar scrollbar;
 		readonly int index;
 		public CustomizationMenu(int index) : base() {
 			this.index = index;
@@ -261,7 +263,7 @@ namespace BeastCustomization {
 				.Select(v => new PropertyFieldWrapper(v)
 			)
 			.ToArray();
-			Width.Set(416f * scale.X, 0);
+			Width.Set((416f + 10) * scale.X, 0);
 			listWrapper = new CustomizationMenuList();
 			listWrapper2 = new CustomizationMenuList();
 			Tuple<UIElement, UIElement> wrapper = null;
@@ -282,6 +284,7 @@ namespace BeastCustomization {
 				//if (element is RangeElement) Width.Set(416f * scale.X, 0);
 				//element.Top.Set(element.Top.Pixels + top, element.Top.Percent);
 				totalHeight += top;
+				wrapper.Item1.Width.Pixels -= 10;
 				listWrapper.Append(wrapper.Item1);
 			}
 			listWrapper.Height.Set(Height.Pixels, 0);
@@ -346,18 +349,36 @@ namespace BeastCustomization {
 			Append(saveButton);
 
 			Append(listWrapper2);
+			if (listWrapper.Height.Pixels > Main.screenHeight - (52 + 16)) {
+				scrollbar = new();
+				scrollbar.Top.Set(8, 0);
+				scrollbar.Height.Set(-16, 1);
+				scrollbar.Left.Set(-20, 1);
+				scrollbar.SetView(Main.screenHeight - (52 + 16), listWrapper.Height.Pixels);
+				Append(scrollbar);
+			}
 			Height.Set(0, 1);
 			//Height.Set(Math.Min(totalHeight + (Width.Pixels / 8), Main.screenHeight * 0.9f), 0);
 			//Left.Set(Width.Pixels * 0.1f, 1f);
 			//Top.Set(Height.Pixels * -0.5f, 0.5f);
+		}
+		public override void Update(GameTime gameTime) {
+			if (scrollbar is not null) {
+				float oldTop = listWrapper.Top.Pixels;
+				listWrapper.Top.Pixels = -scrollbar.ViewPosition;
+				if (listWrapper.Top.Pixels != oldTop) this.Recalculate();
+			}
 		}
 
 		public override void OnDeactivate() {
 			(Main.LocalPlayer.ModPlayers[BeastCustomization.BeastPlayers[index]] as BeastPlayerBase).FinishCustomization(false);
 		}
 		public override void ScrollWheel(UIScrollWheelEvent evt) {
-			listWrapper.Top.Pixels = MathHelper.Clamp(listWrapper.Top.Pixels + evt.ScrollWheelValue, (Main.screenHeight - (52 + 16)) - listWrapper.Height.Pixels, 0);
-			this.Recalculate();
+			if (scrollbar is not null) {
+				scrollbar.ViewPosition -= evt.ScrollWheelValue;
+			}
+			//listWrapper.Top.Pixels = MathHelper.Clamp(listWrapper.Top.Pixels + evt.ScrollWheelValue, (Main.screenHeight - (52 + 16)) - listWrapper.Height.Pixels, 0);
+			//this.Recalculate();
 		}
 		public override void Draw(SpriteBatch spriteBatch) {
 			base.Draw(spriteBatch);
@@ -369,9 +390,9 @@ namespace BeastCustomization {
 			}
 			int endHeight = dimensions.Width / 8;
 			Color color = Color.IndianRed;
-			Rectangle topRect = new Rectangle(dimensions.X, dimensions.Y, dimensions.Width, endHeight);
-			Rectangle midRect = new Rectangle(dimensions.X, dimensions.Y + endHeight, dimensions.Width, dimensions.Height - (endHeight * 2));
-			Rectangle bottomRect = new Rectangle(dimensions.X, dimensions.Y + dimensions.Height - endHeight, dimensions.Width, endHeight);
+			Rectangle topRect = new Rectangle(dimensions.X, dimensions.Y, dimensions.Width - 10, endHeight);
+			Rectangle midRect = new Rectangle(dimensions.X, dimensions.Y + endHeight, dimensions.Width - 10, dimensions.Height - (endHeight * 2));
+			Rectangle bottomRect = new Rectangle(dimensions.X, dimensions.Y + dimensions.Height - endHeight, dimensions.Width - 10, endHeight);
 			spriteBatch.Draw(BeastCustomization.SelectorEndTexture, topRect, new Rectangle(0, 0, 208, 26), color, 0, default, SpriteEffects.None, 0);
 			spriteBatch.Draw(BeastCustomization.SelectorMidTexture, midRect, new Rectangle(0, 0, 208, 1), color, 0, default, SpriteEffects.None, 0);
 			spriteBatch.Draw(BeastCustomization.SelectorEndTexture, bottomRect, new Rectangle(0, 0, 208, 26), color, 0, default, SpriteEffects.FlipVertically, 0);
@@ -415,8 +436,11 @@ namespace BeastCustomization {
 			}
 			int i = 0;
 			const float marginedButtonHeight = 52 + 8;
+			int snapPoints = 0;
+			int snapPointsPerPreset = 0;
 			void AddButton(TagCompound item, int index, bool inConfig) {
 				string name = item.TryGet("presetName", out string presetName) ? presetName : ("Preset #" + index);
+				snapPointsPerPreset = 0;
 				UIButton applyButton = new UIButton() {
 					Text = name,
 					Left = new(8, 0),
@@ -429,6 +453,8 @@ namespace BeastCustomization {
 					beastPlayer.FinishCustomization(true);
 					beastPlayer.StartCustomization();
 				};
+				applyButton.SetSnapPoint($"{name}_{nameof(applyButton)}", snapPoints++);
+				snapPointsPerPreset++;
 
 				UIButton renameButton = new UIButton() {
 					Text = Language.GetTextValue("UI.Rename"),
@@ -439,6 +465,8 @@ namespace BeastCustomization {
 				renameButton.OnClick += (el) => {
 					Main.LocalPlayer.GetModPlayer<SharedModPlayer>().renamingPreset = new(applyButton, item, name);
 				};
+				renameButton.SetSnapPoint($"{name}_{nameof(renameButton)}", snapPoints++);
+				snapPointsPerPreset++;
 
 				UIButton overwriteButton = new UIButton(15, 600) {
 					Text = Language.GetTextValue("Overwrite"),
@@ -453,6 +481,8 @@ namespace BeastCustomization {
 						//if (inConfig) BeastCustomizationSavedPresets.Instance.Save();
 					}
 				};
+				overwriteButton.SetSnapPoint($"{name}_{nameof(overwriteButton)}", snapPoints++);
+				snapPointsPerPreset++;
 
 				UIButton deleteButton = new UIButton(15, 600) {
 					Text = Language.GetTextValue("UI.Delete"),
@@ -483,8 +513,11 @@ namespace BeastCustomization {
 							wrapper.Remove();
 						}
 						grandparent.RecalculateChildren();
+						snapPoints -= snapPointsPerPreset;
 					}
 				};
+				deleteButton.SetSnapPoint($"{name}_{nameof(deleteButton)}", snapPoints++);
+				snapPointsPerPreset++;
 
 				UIButton moveButton = new UIButton(15, 600) {
 					Text = $"Move to {(inConfig ? "Player" : "Config")}",
@@ -525,10 +558,13 @@ namespace BeastCustomization {
 					AddButton(item, index, !inConfig);
 					grandparent.RecalculateChildren();
 				};
+				moveButton.SetSnapPoint($"{name}_{nameof(moveButton)}", snapPoints++);
+				snapPointsPerPreset++;
 				if (index == -1) {
 					renameButton = null;
 					deleteButton = null;
 					moveButton = null;
+					snapPoints -= 3;
 				}
 				//renameButton.Append(deleteButton);
 				//applyButton.Append(renameButton);
