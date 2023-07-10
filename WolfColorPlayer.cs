@@ -28,102 +28,102 @@ namespace BeastCustomization {
 	[LegacyName("BeastColorPlayer")]
 	public class WolfColorPlayer : BeastPlayerBase {
 		#region fields
-		[Label("Head Fur Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.headFurStyle")]
 		[ListRange("HeadFurTextures"), Slider]
 		public int headFurStyle = 1;
 
-		[Label("Head Secondary Fur Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.headSecondaryFurStyle")]
 		[ListRange("HeadSecondaryFurTextures"), Slider]
 		public int headSecondaryFurStyle = 0;
 
-		[Label("Teeth Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.headTeethStyle")]
 		[ListRange("HeadTeethTextures"), Slider]
 		public int headTeethStyle = 0;
 
-		[Label("Body Fur Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.bodyFurStyle")]
 		[ListRange("BodyFurTextures"), Slider]
 		public int bodyFurStyle = 1;
 
-		[Label("Body Secondary Fur Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.bodySecondaryFurStyle")]
 		[ListRange("BodySecondaryFurTextures"), Slider]
 		public int bodySecondaryFurStyle = 0;
 
-		[Label("Body Claws Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.bodyClawsStyle")]
 		[ListRange("BodyClawsTextures"), Slider]
 		public int bodyClawsStyle = 0;
 
-		[Label("Legs Fur Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.legsFurStyle")]
 		[ListRange("LegsFurTextures"), Slider]
 		public int legsFurStyle = 1;
 
-		[Label("Legs Secondary Fur Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.legsSecondaryFurStyle")]
 		[ListRange("LegsSecondaryFurTextures"), Slider]
-		public int legsSecondaryFurStyle = 1;
+		public int legsSecondaryFurStyle = 0;
 
-		[Label("Legs Claws Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.legsClawsStyle")]
 		[ListRange("LegsClawsTextures"), Slider]
 		public int legsClawsStyle = 0;
 
-		[Label("Glowing Eyes")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.eyesGlow")]
 		public bool eyesGlow = false;
 
-		[Label("Apply Dye to Eyes")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.eyesDye")]
 		public bool eyesDye = false;
 
 		//[JsonIgnore]
-		[Label("Apply Head Armor")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.applyHead")]
 		public bool applyHead = false;
 
 		//[JsonIgnore]
-		[Label("Apply Body Armor")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.applyBody")]
 		public bool applyBody = false;
 
-		[Label("Apply Cloaks")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.applyCloaks")]
 		public bool applyCloaks = true;
 
 		//[JsonIgnore]
-		[Label("Apply Leg Armor")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.applyLegs")]
 		public bool applyLegs = false;
 
 		//[JsonIgnore]
-		[Label("Apply Head Armor Over Fur")]
-		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.applyHeadOver")]
+		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyHeadOver = false;
 
 		//[JsonIgnore]
-		[Label("Apply Body Armor Over Fur")]
-		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.applyBodyOver")]
+		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyBodyOver = false;
 
 		//[JsonIgnore]
-		[Label("Apply Leg Armor Over Fur")]
-		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.applyLegsOver")]
+		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyLegsOver = false;
 
-		[Label("Primary Fur Hair Dye")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.primaryHairDye")]
 		[CustomModConfigItem(typeof(HairDyeConfigElement))]
 		public Item primaryHairDye = new();
 
-		[Label("Secondary Fur Hair Dye")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.secondaryHairDye")]
 		[CustomModConfigItem(typeof(HairDyeConfigElement))]
 		public Item secondaryHairDye = new();
 
-		[Label("Iris Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.eyesIrisColor")]
 		public Color eyesIrisColor = new Color(242, 8, 46);
 
-		[Label("Sclera Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.eyesScleraColor")]
 		public Color eyesScleraColor = new Color(241, 241, 241);
 
-		[Label("Teeth Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.headTeethColor")]
 		public Color headTeethColor = new Color(227, 232, 238);
 
-		[Label("Fur Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.furColor")]
 		public Color furColor = new Color(220, 153, 107);
 
-		[Label("Secondary Fur Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.furColor2")]
 		public Color furColor2 = new Color(190, 153, 117);
 
-		[Label("Claws Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.clawsColor")]
 		public Color clawsColor = new Color(222, 206, 192);
 
 		[JsonIgnore]
@@ -147,7 +147,7 @@ namespace BeastCustomization {
 
 		TagCompound oldData;
 		#endregion fields
-		public override string DisplayName => "Werewolf";
+		public override string DisplayName => base.DisplayName;
 		public override BeastPlayerBase CreateNew() => new WolfColorPlayer();
 		public override Type ResourceCacheType => typeof(Werewolf);
 		public override ref List<TagCompound> ConfigPresets => ref BeastCustomizationSavedPresets.Instance.wolfPresets;
@@ -162,138 +162,6 @@ namespace BeastCustomization {
 				ImportData(oldData ??= new());
 				SendData();
 			}
-		}
-		public override void ExportData(TagCompound tag) {
-			tag["headFurStyle"] = headFurStyle;
-			tag["headSecondaryFurStyle"] = headSecondaryFurStyle;
-			tag["headTeethStyle"] = headTeethStyle;
-
-			tag["bodyFurStyle"] = bodyFurStyle;
-			tag["bodySecondaryFurStyle"] = bodySecondaryFurStyle;
-			tag["bodyClawsStyle"] = bodyClawsStyle;
-
-			tag["legsFurStyle"] = legsFurStyle;
-			tag["legsSecondaryFurStyle"] = legsSecondaryFurStyle;
-			tag["legsClawsStyle"] = legsClawsStyle;
-
-			tag["eyesGlow"] = eyesGlow;
-			tag["eyesDye"] = eyesDye;
-			tag["eyesIrisColor"] = eyesIrisColor;
-			tag["eyesScleraColor"] = eyesScleraColor;
-			tag["headTeethColor"] = headTeethColor;
-			tag["furColor"] = furColor;
-			tag["furColor2"] = furColor2;
-			tag["clawsColor"] = clawsColor;
-			tag["applyHead"] = applyHead;
-			tag["applyBody"] = applyBody;
-			tag["applyCloaks"] = applyCloaks;
-			tag["applyLegs"] = applyLegs;
-			tag["applyHeadOver"] = applyHeadOver;
-			tag["applyBodyOver"] = applyBodyOver;
-			tag["applyLegsOver"] = applyLegsOver;
-			tag["primaryHairDye"] = primaryHairDye;
-			tag["secondaryHairDye"] = secondaryHairDye;
-		}
-		public override void ImportData(TagCompound tag) {
-			if (tag.TryGet("headFurStyle", out int _headFurStyle)) headFurStyle = _headFurStyle;
-			if (tag.TryGet("headSecondaryFurStyle", out int _headSecondaryFurStyle)) headSecondaryFurStyle = _headSecondaryFurStyle;
-			if (tag.TryGet("headTeethStyle", out int _headTeethStyle)) headTeethStyle = _headTeethStyle;
-
-			if (tag.TryGet("bodyFurStyle", out int _bodyFurStyle)) bodyFurStyle = _bodyFurStyle;
-			if (tag.TryGet("bodySecondaryFurStyle", out int _bodySecondaryFurStyle)) bodySecondaryFurStyle = _bodySecondaryFurStyle;
-			if (tag.TryGet("bodyClawsStyle", out int _bodyClawsStyle)) bodyClawsStyle = _bodyClawsStyle;
-
-			if (tag.TryGet("legsFurStyle", out int _legsFurStyle)) legsFurStyle = _legsFurStyle;
-			if (tag.TryGet("legsSecondaryFurStyle", out int _legsSecondaryFurStyle)) legsSecondaryFurStyle = _legsSecondaryFurStyle;
-			if (tag.TryGet("legsClawsStyle", out int _legsClawsStyle)) legsClawsStyle = _legsClawsStyle;
-
-			if (tag.TryGet("eyesGlow", out bool _eyesGlow)) eyesGlow = _eyesGlow;
-			if (tag.TryGet("eyesDye", out bool _eyesDye)) eyesDye = _eyesDye;
-
-			if (tag.TryGet("eyesIrisColor", out Color _eyesIrisColor)) eyesIrisColor = _eyesIrisColor;
-			if (tag.TryGet("eyesScleraColor", out Color _eyesScleraColor)) eyesScleraColor = _eyesScleraColor;
-			if (tag.TryGet("headTeethColor", out Color _headTeethColor)) headTeethColor = _headTeethColor;
-			if (tag.TryGet("furColor", out Color _furColor)) furColor = _furColor;
-			if (tag.TryGet("furColor2", out Color _furColor2)) furColor2 = _furColor2;
-			if (tag.TryGet("clawsColor", out Color _clawsColor)) clawsColor = _clawsColor;
-
-			if (tag.TryGet("applyHead", out bool _applyHead)) applyHead = _applyHead;
-			if (tag.TryGet("applyBody", out bool _applyBody)) applyBody = _applyBody;
-			if (tag.TryGet("applyCloaks", out bool _applyCloaks)) applyCloaks = _applyCloaks;
-			if (tag.TryGet("applyLegs", out bool _applyLegs)) applyLegs = _applyLegs;
-			if (tag.TryGet("applyHeadOver", out bool _applyHeadOver)) applyHeadOver = _applyHeadOver;
-			if (tag.TryGet("applyBodyOver", out bool _applyBodyOver)) applyBodyOver = _applyBodyOver;
-			if (tag.TryGet("applyCloakOver", out bool _applyCloakOver)) applyCloaks = _applyCloakOver;
-			if (tag.TryGet("applyLegsOver", out bool _applyLegsOver)) applyLegsOver = _applyLegsOver;
-			if (tag.TryGet("primaryHairDye", out Item _primaryHairDye)) primaryHairDye = _primaryHairDye;
-			if (tag.TryGet("secondaryHairDye", out Item _secondaryHairDye)) secondaryHairDye = _secondaryHairDye;
-			//Mod.Logger.Info($"loading {Player.name}, fur color: {furColor}");
-		}
-		public override void NetSend(BinaryWriter writer) {
-			writer.Write(headFurStyle);
-			writer.Write(headSecondaryFurStyle);
-			writer.Write(headTeethStyle);
-
-			writer.Write(bodyFurStyle);
-			writer.Write(bodySecondaryFurStyle);
-			writer.Write(bodyClawsStyle);
-
-			writer.Write(legsFurStyle);
-			writer.Write(legsSecondaryFurStyle);
-			writer.Write(legsClawsStyle);
-
-			writer.Write(eyesGlow);
-			writer.Write(eyesDye);
-
-			writer.Write(eyesIrisColor.PackedValue);
-			writer.Write(eyesScleraColor.PackedValue);
-			writer.Write(headTeethColor.PackedValue);
-			writer.Write(furColor.PackedValue);
-			writer.Write(furColor2.PackedValue);
-			writer.Write(clawsColor.PackedValue);
-
-			writer.Write(applyHead);
-			writer.Write(applyBody);
-			writer.Write(applyCloaks);
-			writer.Write(applyLegs);
-			writer.Write(applyHeadOver);
-			writer.Write(applyBodyOver);
-			writer.Write(applyLegsOver);
-			Reflection.BinaryWriterWriteItem(writer, primaryHairDye);
-			Reflection.BinaryWriterWriteItem(writer, secondaryHairDye);
-		}
-		public override void NetRecieve(BinaryReader reader) {
-			headFurStyle = reader.ReadInt32();
-			headSecondaryFurStyle = reader.ReadInt32();
-			headTeethStyle = reader.ReadInt32();
-
-			bodyFurStyle = reader.ReadInt32();
-			bodySecondaryFurStyle = reader.ReadInt32();
-			bodyClawsStyle = reader.ReadInt32();
-
-			legsFurStyle = reader.ReadInt32();
-			legsSecondaryFurStyle = reader.ReadInt32();
-			legsClawsStyle = reader.ReadInt32();
-
-			eyesGlow = reader.ReadBoolean();
-			eyesDye = reader.ReadBoolean();
-
-			eyesIrisColor.PackedValue = reader.ReadUInt32();
-			eyesScleraColor.PackedValue = reader.ReadUInt32();
-			headTeethColor.PackedValue = reader.ReadUInt32();
-			furColor.PackedValue = reader.ReadUInt32();
-			furColor2.PackedValue = reader.ReadUInt32();
-			clawsColor.PackedValue = reader.ReadUInt32();
-
-			applyHead = reader.ReadBoolean();
-			applyBody = reader.ReadBoolean();
-			applyCloaks = reader.ReadBoolean();
-			applyLegs = reader.ReadBoolean();
-			applyHeadOver = reader.ReadBoolean();
-			applyBodyOver = reader.ReadBoolean();
-			applyLegsOver = reader.ReadBoolean();
-			primaryHairDye = Reflection.BinaryReaderReadItem(reader);
-			secondaryHairDye = Reflection.BinaryReaderReadItem(reader);
 		}
 		internal const bool enabled = true;
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {

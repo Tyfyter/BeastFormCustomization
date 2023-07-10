@@ -1,0 +1,106 @@
+"Keybinds.Open Customization Menu.DisplayName": Open  Customization  Menu
+
+Forms: {
+	WolfColorPlayer: {
+		Name: Werewolf
+		headFurStyle: Head Fur Style
+		headSecondaryFurStyle: Head Secondary Fur Style
+		headTeethStyle: Teeth Style
+		bodyFurStyle: Body Fur Style
+		bodySecondaryFurStyle: Body Secondary Fur Style
+		bodyClawsStyle: Body Claws Style
+		legsFurStyle: Legs Fur Style
+		legsSecondaryFurStyle: Legs Secondary Fur Style
+		legsClawsStyle: Legs Claws Style
+		eyesGlow: Glowing Eyes
+		eyesDye: Apply Dye to Eyes
+		applyHead: Apply Head Armor
+		applyBody: Apply Body Armor
+		applyCloaks: Apply Cloaks
+		applyLegs: Apply Leg Armor
+		applyHeadOver: Apply Head Armor Over Fur
+		applyBodyOver: Apply Body Armor Over Fur
+		applyLegsOver: Apply Leg Armor Over Fur
+		primaryHairDye: Primary Fur Hair Dye
+		secondaryHairDye: Secondary Fur Hair Dye
+		eyesIrisColor: Iris Color
+		eyesScleraColor: Sclera Color
+		headTeethColor: Teeth Color
+		furColor: Fur Color
+		furColor2: Secondary Fur Color
+		clawsColor: Claws Color
+	}
+
+	FishColorPlayer: {
+		Name: Merfolk
+		headScaleStyle: Head Scale Style
+		headScaleStyle2: Head Secondary Scale Style
+		headEyeStyle: Eye Style
+		bodyScaleStyle: Body Scale Style
+		bodySecondaryScaleStyle: Body Secondary Scale Style
+		legsScaleStyle: Legs Scale Style
+		legsScaleStyle2: Legs Secondary Scale Style
+		eyesGlow: Glowing Eyes
+		eyesDye: Apply Dye to Eyes
+		applyHead: Apply Head Armor
+		applyBody: Apply Body Armor
+		applyCloaks: Apply Cloaks
+		applyLegs: Apply Leg Armor
+		applyHeadOver: Apply Head Armor Over Scales
+		applyBodyOver: Apply Body Armor Over Scales
+		applyLegsOver: Apply Leg Armor Over Scales
+		eyesColor: Eye Color
+		scaleColor: Scale Color
+		scaleColor2: Secondary Scale Color
+	}
+
+	FishWolfColorPlayer: {
+		Name: Merwolf
+		headPrimaryStyle: Head Primary Style
+		headSecondaryStyle: Head Secondary Style
+		eyesIrisStyle: Iris Style
+		eyesScleraStyle: Sclera Style
+		headTeethStyle: Teeth Style
+		bodyPrimaryStyle: Body Primary Style
+		bodySecondaryStyle: Body Secondary Style
+		bodyClawsStyle: Body Claws Style
+		legsPrimaryStyle: Legs Primary Style
+		legsSecondaryStyle: Legs Secondary Style
+		legsClawsStyle: Legs Claws Style
+		eyesGlow: Glowing Eyes
+		eyesDye: Apply Dye to Eyes
+		applyHead: Apply Head Armor
+		applyBody: Apply Body Armor
+		applyCloaks: Apply Cloaks
+		applyLegs: Apply Leg Armor
+		applyHeadOver: Apply Head Armor Over... Fur?
+		applyBodyOver: Apply Body Armor Over... Fur?
+		applyLegsOver: Apply Leg Armor Over... Fur?
+		primaryHairDye: Primary Fur Hair Dye
+		secondaryHairDye: Secondary Fur Hair Dye
+		eyesIrisColor: Iris Color
+		eyesScleraColor: Sclera Color
+		headTeethColor: Teeth Color
+		headSecondaryColor: Head Secondary Color
+		primaryColor: Primary Color
+		bodySecondaryColor: Body Secondary Color
+		clawsColor: Claws Color
+	}
+
+	Generic.LooksRidiculous: Looks absolutely ridiculous with almost everything
+}
+
+Configs: {
+	BeastCustomizationConfig: {
+		DisplayName: Beast Customization Config
+
+		openToActive: {
+			Label: Open to active form
+			Tooltip:
+				'''
+				Whether or not the keybind will skip the selection menu and directly open the current form's menu
+				(when applicable)
+				'''
+		}
+	}
+}

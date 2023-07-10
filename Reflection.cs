@@ -47,7 +47,7 @@ namespace BeastCustomization {
 			return color;
 		}
 		public static void BinaryWriterWriteItem(BinaryWriter writer, Item item) {
-			writer.Write((int)item.netID);
+			writer.Write((int)(item?.netID ?? ItemID.None));
 		}
 		public static Item BinaryReaderReadItem(BinaryReader reader) => new Item(reader.ReadInt32());
 	}

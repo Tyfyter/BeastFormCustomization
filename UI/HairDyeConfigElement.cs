@@ -73,6 +73,7 @@ namespace BeastCustomization.UI {
 				dimensions,
 				backColor
 			);
+			Main.inventoryScale *= 1.15f;
 			ItemSlot.Draw(
 				spriteBatch,
 				ref item,

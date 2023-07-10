@@ -23,7 +23,7 @@ using Terraria.ModLoader.IO;
 namespace BeastCustomization {
 	public abstract class BeastPlayerBase : ModPlayer {
 		public ushort ModIndex { get; private set; }
-		public abstract string DisplayName { get; }
+		public virtual string DisplayName => $"Mods.{Mod.Name}.Forms.{GetType().Name}.Name";
 		public virtual bool IsActive => false;
 		public virtual int Specificity => 0;
 		public override ModPlayer NewInstance(Player entity) {
@@ -60,10 +60,34 @@ namespace BeastCustomization {
 		public abstract ref List<TagCompound> ConfigPresets { get; }
 		public abstract void StartCustomization();
 		public abstract void FinishCustomization(bool overwrite);
-		public abstract void ExportData(TagCompound tag);
-		public abstract void ImportData(TagCompound tag);
-		public abstract void NetSend(BinaryWriter writer);
-		public abstract void NetRecieve(BinaryReader reader);
+		public static Dictionary<Type, Action<BeastPlayerBase, TagCompound>> ExportDatas { get; set; }
+		public static Dictionary<Type, Action<BeastPlayerBase, TagCompound>> ImportDatas { get; set; }
+		public virtual void ExportData(TagCompound tag) {
+			if (!(ExportDatas ??= new()).TryGetValue(GetType(), out var exportFunc)) {
+				ExportDatas.Add(GetType(), exportFunc = GenerateExportData(GetType()));
+			}
+			exportFunc(this, tag);
+		}
+		public virtual void ImportData(TagCompound tag) {
+			if (!(ImportDatas ??= new()).TryGetValue(GetType(), out var importFunc)) {
+				ImportDatas.Add(GetType(), importFunc = GenerateImportData(GetType()));
+			}
+			importFunc(this, tag);
+		}
+		public static Dictionary<Type, Action<BeastPlayerBase, BinaryWriter>> NetSends { get; set; }
+		public static Dictionary<Type, Action<BeastPlayerBase, BinaryReader>> NetReceives { get; set; }
+		public virtual void NetSend(BinaryWriter writer) {
+			if (!(NetSends ??= new()).TryGetValue(GetType(), out var sendFunc)) {
+				NetSends.Add(GetType(), sendFunc = GenerateNetSend(GetType()));
+			}
+			sendFunc(this, writer);
+		}
+		public virtual void NetReceive(BinaryReader reader) {
+			if (!(NetReceives ??= new()).TryGetValue(GetType(), out var receiveFunc)) {
+				NetReceives.Add(GetType(), receiveFunc = GenerateNetReceive(GetType()));
+			}
+			receiveFunc(this, reader);
+		}
 		public abstract void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs);
 		public abstract void HideVanillaDrawLayers(PlayerDrawSet drawInfo, out bool hideHead, out bool hideBody, out bool hideLegs);
 		public sealed override void SaveData(TagCompound tag) {
@@ -81,8 +105,8 @@ namespace BeastCustomization {
 				if (Player.whoAmI == Main.myPlayer) {
 					SendData();
 				} else {
-					WolfColorPlayer myBeastColorPlayer = Main.LocalPlayer.GetModPlayer<WolfColorPlayer>();
-					myBeastColorPlayer.SendData((short)Player.whoAmI);
+					//WolfColorPlayer myBeastColorPlayer = Main.LocalPlayer.GetModPlayer<WolfColorPlayer>();
+					SendData((short)Player.whoAmI);
 				}
 			}
 		}
@@ -141,27 +165,29 @@ namespace BeastCustomization {
 		/// <summary>
 		/// checks if NetSend and NetReceive properly cover all fields
 		/// </summary>
-		internal bool CheckSync() {
+		internal bool CheckSync(bool verbose) {
 			return CheckIntegrity((BeastPlayerBase first, BeastPlayerBase second) => {
 				MemoryStream stream = new MemoryStream();
 				first.NetSend(new BinaryWriter(stream));
 				stream.Position = 0;
-				second.NetRecieve(new BinaryReader(stream));
-			}, "{0} field {1} not syncing properly"
+				second.NetReceive(new BinaryReader(stream));
+			}, "[c/FF0000:{0} field {1} not syncing properly]",
+			verbose ? "[c/00FF00:{0} field {1} syncing properly]" : null
 			);
 		}
 		/// <summary>
 		/// checks if NetSend and NetReceive properly cover all fields
 		/// </summary>
-		internal bool CheckSave() {
+		internal bool CheckSave(bool verbose) {
 			return CheckIntegrity((BeastPlayerBase first, BeastPlayerBase second) => {
 				TagCompound tag = new TagCompound();
 				first.ExportData(tag);
 				second.ImportData(tag);
-			}, "{0} field {1} not saving properly"
+			}, "[c/FF0000:{0} field {1} not saving properly]",
+			verbose ? "[c/00FF00:{0} field {1} saving properly]" : null
 			);
 		}
-		internal bool CheckIntegrity(Action<BeastPlayerBase, BeastPlayerBase> action, string text) {
+		internal bool CheckIntegrity(Action<BeastPlayerBase, BeastPlayerBase> action, string text, string successText = null) {
 			static bool Compare(FieldInfo field, BeastPlayerBase first, BeastPlayerBase second) {
 				switch (field.FieldType.Name) {
 					case nameof(Item):
@@ -207,10 +233,165 @@ namespace BeastCustomization {
 				if (!Compare(field, first, second)) {
 					Main.NewText(string.Format(text, field.DeclaringType.Name, field.Name));
 					fullySyncing = false;
+				} else if (successText is not null) {
+					Main.NewText(string.Format(successText, field.DeclaringType.Name, field.Name));
 				}
 			}
 			return fullySyncing;
 		}
+		//*
+		protected internal static Action<BeastPlayerBase, BinaryWriter> GenerateNetSend(Type type) {
+			if (!type.IsAssignableTo(typeof(BeastPlayerBase))) throw new ArgumentException($"{nameof(type)} must extend {typeof(BeastPlayerBase)}", nameof(type));
+			DynamicMethod netSendMethod = new DynamicMethod($"{type.Name}_NetSend", null, new Type[] { typeof(BeastPlayerBase), typeof(BinaryWriter) }, true);
+			ILGenerator gen = netSendMethod.GetILGenerator();
+			MethodInfo info = typeof(BeastPlayerBase).GetMethod("_testSend", BindingFlags.NonPublic | BindingFlags.Static);
+
+			foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
+				if (field.GetCustomAttribute<JsonIgnoreAttribute>() is null) {
+					if (!Reflection.BinaryWriterWrites.TryGetValue(field.FieldType, out MethodInfo write)) {
+						write = typeof(BinaryWriter).GetMethod(
+							"Write",
+							BindingFlags.Public | BindingFlags.Instance,
+							new Type[] { field.FieldType }
+						);
+						Reflection.BinaryWriterWrites.Add(field.FieldType, write);
+					}
+					if (write is null) {
+						throw new Exception($"Could not find write method for type {field.FieldType}");
+					}
+					gen.Emit(OpCodes.Ldarg_1);
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldfld, field);
+					gen.Emit(write.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, write);
+
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldfld, field);
+					gen.Emit(OpCodes.Box, field.FieldType);
+					gen.Emit(OpCodes.Ldarg_1);
+					gen.Emit(OpCodes.Call, info);
+				}
+			}
+
+			gen.Emit(OpCodes.Ret);
+
+			return netSendMethod.CreateDelegate<Action<BeastPlayerBase, BinaryWriter>>();
+		}
+		protected internal static Action<BeastPlayerBase, BinaryReader> GenerateNetReceive(Type type) {
+			if (!type.IsAssignableTo(typeof(BeastPlayerBase))) throw new ArgumentException($"{nameof(type)} must extend {typeof(BeastPlayerBase)}", nameof(type));
+			DynamicMethod netRecieveMethod = new DynamicMethod($"{type.Name}_NetRecieve", null, new Type[] { typeof(BeastPlayerBase), typeof(BinaryReader) }, true);
+			ILGenerator gen = netRecieveMethod.GetILGenerator();
+			MethodInfo info = typeof(BeastPlayerBase).GetMethod("_testReceive", BindingFlags.NonPublic | BindingFlags.Static);
+
+			foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
+				if (field.GetCustomAttribute<JsonIgnoreAttribute>() is null) {
+					if (!Reflection.BinaryReaderReads.TryGetValue(field.FieldType, out MethodInfo read)) {
+						read = typeof(BinaryReader).GetMethods()
+							.Where(m => m.ReturnType == field.FieldType && m.Name == $"Read{field.FieldType.Name}")
+							.FirstOrDefault();
+						Reflection.BinaryReaderReads.Add(field.FieldType, read);
+					}
+					if (read is null) {
+						throw new Exception($"Could not find read method for type {field.FieldType}");
+					}
+					ParameterInfo[] parameters = read.GetParameters();
+					if (read.ReturnType != field.FieldType) {
+						throw new Exception($"Invalid read method provided for type {field.FieldType}");
+					}
+					//gen.Emit(OpCodes.Ldstr, $"1 receiving {field} {read}");
+
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldarg_1);
+					gen.Emit(read.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, read);
+					gen.Emit(OpCodes.Stfld, field);
+
+					//gen.Emit(OpCodes.Ldstr, $"2 receiving {field} {read}");
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldfld, field);
+					gen.Emit(OpCodes.Box, field.FieldType);
+					gen.Emit(OpCodes.Ldarg_1);
+					gen.Emit(OpCodes.Call, info);
+				}
+			}
+
+			gen.Emit(OpCodes.Ret);
+
+			return netRecieveMethod.CreateDelegate<Action<BeastPlayerBase, BinaryReader>>();
+		}
+		protected internal static Action<BeastPlayerBase, TagCompound> GenerateExportData(Type type) {
+			if (!type.IsAssignableTo(typeof(BeastPlayerBase))) throw new ArgumentException($"{nameof(type)} must extend {typeof(BeastPlayerBase)}", nameof(type));
+			DynamicMethod netRecieveMethod = new DynamicMethod($"{type.Name}_NetRecieve", null, new Type[] { typeof(BeastPlayerBase), typeof(TagCompound) }, true);
+			ILGenerator gen = netRecieveMethod.GetILGenerator();
+			MethodInfo info = typeof(BeastPlayerBase).GetMethod("_testSet", BindingFlags.NonPublic | BindingFlags.Static);
+			MethodInfo setItem = typeof(TagCompound).GetMethod("set_Item");
+
+			foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
+				if (field.GetCustomAttribute<JsonIgnoreAttribute>() is null) {
+					gen.Emit(OpCodes.Ldarg_1);
+					gen.Emit(OpCodes.Ldstr, field.Name);
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldfld, field);
+					gen.Emit(OpCodes.Box, field.FieldType);
+					gen.Emit(OpCodes.Call, info);
+				}
+			}
+
+			gen.Emit(OpCodes.Ret);
+
+			return netRecieveMethod.CreateDelegate<Action<BeastPlayerBase, TagCompound>>();
+		}
+		protected internal static Action<BeastPlayerBase, TagCompound> GenerateImportData(Type type) {
+			if (!type.IsAssignableTo(typeof(BeastPlayerBase))) throw new ArgumentException($"{nameof(type)} must extend {typeof(BeastPlayerBase)}", nameof(type));
+			DynamicMethod netRecieveMethod = new DynamicMethod($"{type.Name}_NetRecieve", null, new Type[] { typeof(BeastPlayerBase), typeof(TagCompound) }, true);
+			ILGenerator gen = netRecieveMethod.GetILGenerator();
+			MethodInfo info = typeof(BeastPlayerBase).GetMethod("_testSet", BindingFlags.NonPublic | BindingFlags.Static);
+			MethodInfo tryGet = typeof(TagCompound).GetMethod("TryGet");
+			Dictionary<Type, (MethodInfo, LocalVariableInfo)> typeData = new();
+
+			foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
+				if (field.GetCustomAttribute<JsonIgnoreAttribute>() is null) {
+					MethodInfo generic;
+					LocalVariableInfo localVar;
+					if (typeData.TryGetValue(type, out (MethodInfo, LocalVariableInfo) data)) {
+						generic = data.Item1;
+						localVar = data.Item2;
+					} else {
+						generic = tryGet.MakeGenericMethod(field.FieldType);
+						localVar = gen.DeclareLocal(field.FieldType);
+					}
+					Label skip = gen.DefineLabel();
+					gen.Emit(OpCodes.Ldarg_1);
+					gen.Emit(OpCodes.Ldstr, field.Name);
+					gen.Emit(OpCodes.Ldloca, localVar.LocalIndex);
+					gen.Emit(OpCodes.Callvirt, generic);
+					gen.Emit(OpCodes.Brfalse, skip);
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldloc, localVar.LocalIndex);
+					gen.Emit(OpCodes.Stfld, field);
+					gen.MarkLabel(skip);
+				}
+			}
+
+			gen.Emit(OpCodes.Ret);
+
+			return netRecieveMethod.CreateDelegate<Action<BeastPlayerBase, TagCompound>>();
+		}
+		static void _testSet(TagCompound tag, string key, object value) {
+			tag[key] = value;
+		}
+		static void _testSend(object value, BinaryWriter writer) {
+			try {
+				BeastCustomization.DebugLogger.Debug($"sending {value} at position {writer.BaseStream.Position}");
+			} catch (NullReferenceException) {
+				BeastCustomization.DebugLogger.Debug($"sending null at position {writer.BaseStream.Position}");
+			}
+		}
+		static void _testReceive(object value, BinaryReader reader) {
+			try {
+				BeastCustomization.DebugLogger.Debug($"receiving {value} at position {reader.BaseStream.Position}");
+			} catch (NullReferenceException) {
+				BeastCustomization.DebugLogger.Debug($"receiving null at position {reader.BaseStream.Position}");
+			}
+		}//*/
 	}
 	public abstract class GenericHeadLayer : PlayerDrawLayer {
 		public sealed override bool IsHeadLayer => true;

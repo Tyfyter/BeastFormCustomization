@@ -25,82 +25,82 @@ using Terraria.UI;
 namespace BeastCustomization {
 	public class FishColorPlayer : BeastPlayerBase {
 		#region fields
-		[Label("Head Scale Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.headScaleStyle")]
 		[ListRange("HeadScaleTextures"), Slider]
 		public int headScaleStyle = 1;
 
-		[Label("Head Secondary Scale Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.headScaleStyle2")]
 		[ListRange("HeadSecondaryScaleTextures"), Slider]
 		public int headScaleStyle2 = 0;
 
-		[Label("Eye Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.headEyeStyle")]
 		[ListRange("EyesTextures"), Slider]
 		public int headEyeStyle = 0;
 
-		[Label("Body Scale Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.bodyScaleStyle")]
 		[ListRange("BodyScaleTextures"), Slider]
 		public int bodyScaleStyle = 1;
 
-		[Label("Body Secondary Scale Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.bodySecondaryScaleStyle")]
 		[ListRange("BodySecondaryScaleTextures"), Slider]
 		public int bodySecondaryScaleStyle = 0;
 
-		[Label("Legs Scale Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.legsScaleStyle")]
 		[ListRange("LegsScaleTextures"), Slider]
 		public int legsScaleStyle = 1;
 
-		[Label("Legs Secondary Scale Style")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.legsScaleStyle2")]
 		[ListRange("LegsSecondaryScaleTextures"), Slider]
 		public int legsScaleStyle2 = 0;
 
-		[Label("Glowing Eyes")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.eyesGlow")]
 		public bool eyesGlow = false;
 
-		[Label("Apply Dye to Eyes")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.eyesDye")]
 		public bool eyesDye = false;
 
 		//[JsonIgnore]
-		[Label("Apply Head Armor")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.applyHead")]
 		public bool applyHead = false;
 
 		//[JsonIgnore]
-		[Label("Apply Body Armor")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.applyBody")]
 		public bool applyBody = false;
 
-		[Label("Apply Cloaks")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.applyCloaks")]
 		public bool applyCloaks = true;
 
 		//[JsonIgnore]
-		[Label("Apply Leg Armor")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.applyLegs")]
 		public bool applyLegs = false;
 
 		//[JsonIgnore]
-		[Label("Apply Head Armor Over Scales")]
-		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.applyHeadOver")]
+		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyHeadOver = false;
 
 		//[JsonIgnore]
-		[Label("Apply Body Armor Over Scales")]
-		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.applyBodyOver")]
+		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyBodyOver = false;
 
 		//[JsonIgnore]
-		[Label("Apply Leg Armor Over Scales")]
-		[Tooltip("Looks absolutely ridiculous with almost everything")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.applyLegsOver")]
+		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyLegsOver = false;
 
-		[Label("Eye Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.eyesColor")]
 		public Color eyesColor = new Color(242, 8, 46);
 
-		[Label("Scale Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.scaleColor")]
 		public Color scaleColor = new Color(41, 185, 127);
 
-		[Label("Secondary Scale Color")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.scaleColor2")]
 		public Color scaleColor2 = new Color(168, 255, 106);
 
 		TagCompound oldData;
 		#endregion fields
-		public override string DisplayName => "Merfolk";
+		//public override string DisplayName => "Merfolk";
 		public override FishColorPlayer CreateNew() => new FishColorPlayer();
 		public override Type ResourceCacheType => typeof(Merfolk);
 		public override ref List<TagCompound> ConfigPresets => ref BeastCustomizationSavedPresets.Instance.fishPresets;
@@ -115,101 +115,6 @@ namespace BeastCustomization {
 				ImportData(oldData ??= new());
 				SendData();
 			}
-		}
-		public override void ExportData(TagCompound tag) {
-			tag["headScaleStyle"] = headScaleStyle;
-			tag["headScaleStyle2"] = headScaleStyle2;
-			tag["headEyeStyle"] = headEyeStyle;
-			tag["bodyScaleStyle"] = bodyScaleStyle;
-			tag["bodySecondaryScaleStyle"] = bodySecondaryScaleStyle;
-			tag["legsScaleStyle"] = legsScaleStyle;
-			tag["legsScaleStyle2"] = legsScaleStyle2;
-			tag["eyesGlow"] = eyesGlow;
-			tag["eyesDye"] = eyesDye;
-			tag["eyesColor"] = eyesColor;
-			tag["scaleColor"] = scaleColor;
-			tag["scaleColor2"] = scaleColor2;
-			tag["applyHead"] = applyHead;
-			tag["applyBody"] = applyBody;
-			tag["applyCloaks"] = applyCloaks;
-			tag["applyLegs"] = applyLegs;
-			tag["applyHeadOver"] = applyHeadOver;
-			tag["applyBodyOver"] = applyBodyOver;
-			tag["applyLegsOver"] = applyLegsOver;
-		}
-		public override void ImportData(TagCompound tag) {
-			if (tag.TryGet("headScaleStyle", out int tempHeadScaleStyle)) headScaleStyle = tempHeadScaleStyle;
-			if (tag.TryGet("headScaleStyle2", out int tempHeadScaleStyle2)) headScaleStyle2 = tempHeadScaleStyle2;
-			if (tag.TryGet("headEyeStyle", out int tempHeadEyeStyle)) headEyeStyle = tempHeadEyeStyle;
-			if (tag.TryGet("bodyScaleStyle", out int tempBodyScaleStyle)) bodyScaleStyle = tempBodyScaleStyle;
-			if (tag.TryGet("bodySecondaryScaleStyle", out int tempBodySecondaryScaleStyle)) bodySecondaryScaleStyle = tempBodySecondaryScaleStyle;
-			if (tag.TryGet("legsScaleStyle", out int tempLegsScaleStyle)) legsScaleStyle = tempLegsScaleStyle;
-			if (tag.TryGet("legsScaleStyle2", out int tempLegsClawsStyle)) legsScaleStyle2 = tempLegsClawsStyle;
-			if (tag.TryGet("eyesGlow", out bool tempEyesGlow)) eyesGlow = tempEyesGlow;
-			if (tag.TryGet("eyesDye", out bool tempEyesDye)) eyesDye = tempEyesDye;
-			if (tag.TryGet("eyesColor", out Color tempEyesIrisColor)) eyesColor = tempEyesIrisColor;
-			if (tag.TryGet("scaleColor", out Color tempScaleColor)) scaleColor = tempScaleColor;
-			if (tag.TryGet("scaleColor2", out Color tempScaleColor2)) scaleColor2 = tempScaleColor2;
-			if (tag.TryGet("applyHead", out bool tempApplyHead)) applyHead = tempApplyHead;
-			if (tag.TryGet("applyBody", out bool tempApplyBody)) applyBody = tempApplyBody;
-			if (tag.TryGet("applyCloaks", out bool tempApplyCloaks)) applyCloaks = tempApplyCloaks;
-			if (tag.TryGet("applyLegs", out bool tempApplyLegs)) applyLegs = tempApplyLegs;
-			if (tag.TryGet("applyHeadOver", out bool tempApplyHeadOver)) applyHeadOver = tempApplyHeadOver;
-			if (tag.TryGet("applyBodyOver", out bool tempApplyBodyOver)) applyBodyOver = tempApplyBodyOver;
-			if (tag.TryGet("applyLegsOver", out bool tempApplyLegsOver)) applyLegsOver = tempApplyLegsOver;
-			//Mod.Logger.Info($"loading {Player.name}, scale color: {scaleColor}");
-		}
-		public override void NetSend(BinaryWriter writer) {
-			writer.Write(headScaleStyle);
-			writer.Write(headScaleStyle2);
-			writer.Write(headEyeStyle);
-
-			writer.Write(bodyScaleStyle);
-			writer.Write(bodySecondaryScaleStyle);
-
-			writer.Write(legsScaleStyle);
-			writer.Write(legsScaleStyle2);
-
-			writer.Write(eyesGlow);
-			writer.Write(eyesDye);
-
-			writer.Write(eyesColor.PackedValue);
-			writer.Write(scaleColor.PackedValue);
-			writer.Write(scaleColor2.PackedValue);
-
-			writer.Write(applyHead);
-			writer.Write(applyBody);
-			writer.Write(applyCloaks);
-			writer.Write(applyLegs);
-			writer.Write(applyHeadOver);
-			writer.Write(applyBodyOver);
-			writer.Write(applyLegsOver);
-		}
-		public override void NetRecieve(BinaryReader reader) {
-			headScaleStyle = reader.ReadInt32();
-			headScaleStyle2 = reader.ReadInt32();
-			headEyeStyle = reader.ReadInt32();
-
-			bodyScaleStyle = reader.ReadInt32();
-			bodySecondaryScaleStyle = reader.ReadInt32();
-
-			legsScaleStyle = reader.ReadInt32();
-			legsScaleStyle2 = reader.ReadInt32();
-
-			eyesGlow = reader.ReadBoolean();
-			eyesDye = reader.ReadBoolean();
-
-			eyesColor.PackedValue = reader.ReadUInt32();
-			scaleColor.PackedValue = reader.ReadUInt32();
-			scaleColor2.PackedValue = reader.ReadUInt32();
-
-			applyHead = reader.ReadBoolean();
-			applyBody = reader.ReadBoolean();
-			applyCloaks = reader.ReadBoolean();
-			applyLegs = reader.ReadBoolean();
-			applyHeadOver = reader.ReadBoolean();
-			applyBodyOver = reader.ReadBoolean();
-			applyLegsOver = reader.ReadBoolean();
 		}
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
 			applyHead = this.applyHead;

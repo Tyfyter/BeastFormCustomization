@@ -81,6 +81,10 @@ namespace BeastCustomization {
 			_rightLock = null;
 			_rightHover = null;
 			modMoonCharms = null;
+			BeastPlayerBase.ExportDatas = null;
+			BeastPlayerBase.ImportDatas = null;
+			BeastPlayerBase.NetSends = null;
+			BeastPlayerBase.NetReceives = null;
 		}
 		public static void FillSpriteList(List<AutoCastingAsset<Texture2D>> list, string baseName, int startIndex = 1) {
 			while (Instance.RequestAssetIfExists($"{baseName}_{startIndex}", out Asset<Texture2D> sprite)) {
@@ -96,7 +100,7 @@ namespace BeastCustomization {
 						short targetPlayer = reader.ReadInt16();
 						WolfColorPlayer syncPlayer = new();
 						ushort beastPlayerIndex = reader.ReadUInt16();
-						syncPlayer.NetRecieve(reader);
+						syncPlayer.NetReceive(reader);
 
 						ModPacket packet = GetPacket();
 						packet.Write((byte)0);
@@ -110,7 +114,7 @@ namespace BeastCustomization {
 			} else {
 				switch (mode) {
 					case 0:
-					(Main.player[reader.ReadInt16()].ModPlayers[BeastPlayers[reader.ReadUInt16()]] as BeastPlayerBase).NetRecieve(reader);
+					(Main.player[reader.ReadInt16()].ModPlayers[BeastPlayers[reader.ReadUInt16()]] as BeastPlayerBase).NetReceive(reader);
 					break;
 
 					case 1:
@@ -642,7 +646,7 @@ namespace BeastCustomization {
 				totalHeight += marginedButtonHeight;
 			}
 			for (int i = 0; i < BeastCustomization.BeastPlayers.Count; i++) {
-				AddButton((Main.LocalPlayer.ModPlayers[BeastCustomization.BeastPlayers[i]] as BeastPlayerBase).DisplayName, i);
+				AddButton(Language.GetTextValue((Main.LocalPlayer.ModPlayers[BeastCustomization.BeastPlayers[i]] as BeastPlayerBase).DisplayName), i);
 			}
 
 			Width.Set(0, 1);
@@ -976,8 +980,6 @@ namespace BeastCustomization {
 	public class BeastCustomizationConfig : ModConfig {
 		public override ConfigScope Mode => ConfigScope.ClientSide;
 		public static BeastCustomizationConfig Instance;
-		[Label("Open to active form")]
-		[Tooltip("Whether or not the keybind will skip the selection menu and directly open the current form's menu\n(when applicable)")]
 		public bool openToActive = true;
 	}
 	public class BeastCustomizationSavedPresets : ILoadable {

@@ -1,0 +1,2 @@
+\[Label\("([\w\s]*)"\)]((?>.|\s)*?public \w+ )(\w+)
+$3: $1\n\t\t[LabelKey\("\$Mods.BeastCustomization.Forms.FishColorPlayer.$3"\)]$2$3
