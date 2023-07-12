@@ -1,4 +1,5 @@
 ﻿using BeastCustomization.Textures;
+using BeastCustomization.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
@@ -17,6 +18,7 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.Graphics.Shaders;
 using Terraria.ID;
+using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
 
@@ -72,6 +74,9 @@ namespace BeastCustomization {
 			if (!(ImportDatas ??= new()).TryGetValue(GetType(), out var importFunc)) {
 				ImportDatas.Add(GetType(), importFunc = GenerateImportData(GetType()));
 			}
+			Version lastVersion = (tag.TryGet("LastVersion", out string versionString) ? Version.Parse(versionString) : new Version());
+			UpdateData(tag, lastVersion, out bool warn);
+			if (warn && !Main.dedServ) Main.NewText(Language.GetTextValue("Mods.BeastCustomization.OldDataWarning", lastVersion));
 			importFunc(this, tag);
 		}
 		public static Dictionary<Type, Action<BeastPlayerBase, BinaryWriter>> NetSends { get; set; }
@@ -91,12 +96,27 @@ namespace BeastCustomization {
 		public abstract void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs);
 		public abstract void HideVanillaDrawLayers(PlayerDrawSet drawInfo, out bool hideHead, out bool hideBody, out bool hideLegs);
 		public sealed override void SaveData(TagCompound tag) {
+			tag.Add("LastVersion", Mod.Version.ToString());
 			ExportData(tag);
 			tag["SavedPresets"] = Presets;
 		}
 		public sealed override void LoadData(TagCompound tag) {
 			ImportData(tag);
 			if (tag.TryGet("SavedPresets", out List<TagCompound> tempPresets)) Presets = tempPresets;
+		}
+		public virtual void UpdateData(TagCompound tag, Version lastVersion, out bool warn) { warn = false; }
+		public void ColorToColorDefinition(TagCompound tag) {
+			foreach (var field in GetType().GetFields().Where(f => f.FieldType == typeof(ColorDefinition))) {
+				if (tag[field.Name] is TagCompound) 
+					continue;
+				Item hairDye = null;
+				if (field.GetCustomAttribute<OldHairDyeFieldAttribute>() is OldHairDyeFieldAttribute oldHairDyeField) {
+					tag.TryGet(oldHairDyeField.FieldName, out hairDye);
+				}
+				if (tag.TryGet(field.Name, out Color color)) {
+					tag[field.Name] = new ColorDefinition(color, hairDye);
+				}
+			}
 		}
 		bool initialized = true;
 		public override void ResetEffects() {

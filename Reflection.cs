@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using BeastCustomization.UI;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -50,5 +51,16 @@ namespace BeastCustomization {
 			writer.Write((int)(item?.netID ?? ItemID.None));
 		}
 		public static Item BinaryReaderReadItem(BinaryReader reader) => new Item(reader.ReadInt32());
+		public static void BinaryWriterWriteColorDefinition(BinaryWriter writer, ColorDefinition colorDefinition) {
+			writer.Write((uint)colorDefinition.baseColor.PackedValue);
+			writer.Write((bool)colorDefinition.HasDye);
+			if (colorDefinition.HasDye) writer.Write((int)colorDefinition.hairDye.netID);
+		}
+		public static ColorDefinition BinaryReaderReadColorDefinition(BinaryReader reader) {
+			return new(
+				new Color() { PackedValue = reader.ReadUInt32() },
+				reader.ReadBoolean() ? new Item(reader.ReadInt32()) : null
+			);
+		}
 	}
 }

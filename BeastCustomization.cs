@@ -224,23 +224,32 @@ namespace BeastCustomization {
 
 	public class CustomizationMenuState : UIState {
 		readonly int index;
+		internal CustomizationMenu customizationMenu;
+		internal static float scrollbarStartPos = 0;
 		public CustomizationMenuState(int index) : base() {
 			this.index = index;
 		}
 		public override void OnInitialize() {
 			Main.UIScaleMatrix.Decompose(out Vector3 scale, out Quaternion _, out Vector3 _);
-			CustomizationMenu customizationMenu = new CustomizationMenu(index);
+			customizationMenu = new CustomizationMenu(index);
 			Append(customizationMenu);
 			PresetsMenu presetsMenu = new PresetsMenu(index);
 			presetsMenu.Left.Pixels += (416f + 10) * scale.X;
 			Append(presetsMenu);
+		}
+		public override void Update(GameTime gameTime) {
+			base.Update(gameTime);
+			if (scrollbarStartPos != 0) {
+				customizationMenu.scrollbar.ViewPosition = scrollbarStartPos;
+				scrollbarStartPos = 0;
+			}
 		}
 	}
 	public class CustomizationMenu : UIElement {
 		public float totalHeight;
 		CustomizationMenuList listWrapper;
 		CustomizationMenuList listWrapper2;
-		UIScrollbar scrollbar;
+		internal UIScrollbar scrollbar;
 		readonly int index;
 		public CustomizationMenu(int index) : base() {
 			this.index = index;
@@ -329,12 +338,9 @@ namespace BeastCustomization {
 
 			resetButton.OnClick += (el) => {
 				beastPlayer.FinishCustomization(false);
-				foreach (var childWrapper in this.Children.First(e => e is CustomizationMenuList).Children.First().Children) {
-					ConfigElement child = childWrapper.Children.First() as ConfigElement;
-					if (child?.GetType() == colorElement) {
-						_current.SetValue(_c.GetValue(child), ((PropertyFieldWrapper)_MemberInfo.GetValue(child)).GetValue(beastPlayer));
-					}
-				}
+				//this.Reinitialize();
+				CustomizationMenuState.scrollbarStartPos = scrollbar.ViewPosition;
+				IngameFancyUI.OpenUIState(new CustomizationMenuState(index));
 			};
 			Append(resetButton);
 
@@ -456,6 +462,10 @@ namespace BeastCustomization {
 					beastPlayer.ImportData(tag);
 					beastPlayer.FinishCustomization(true);
 					beastPlayer.StartCustomization();
+					//customizationMenu.Reinitialize();
+					CustomizationMenuState.scrollbarStartPos = (this.Parent as CustomizationMenuState).customizationMenu.scrollbar.ViewPosition;
+					IngameFancyUI.OpenUIState(new CustomizationMenuState(this.index));
+					//beastPlayer.StartCustomization();
 				};
 				applyButton.SetSnapPoint($"{name}_{nameof(applyButton)}", snapPoints++);
 				snapPointsPerPreset++;
