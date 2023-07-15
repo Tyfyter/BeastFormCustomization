@@ -57,7 +57,6 @@ namespace BeastCustomization {
 		public static ModKeybind OpenMenuHotkey { get; private set; }
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightLock;
 		internal static FastFieldInfo<RangeElement, RangeElement> _rightHover;
-		internal static HashSet<int> modMoonCharms;
 		public override void Load() {
 			if (Main.netMode != NetmodeID.Server) {
 				SelectorEndTexture = Assets.Request<Texture2D>("Textures/UI/Selector_Back_End");
@@ -68,7 +67,7 @@ namespace BeastCustomization {
 			OpenMenuHotkey = KeybindLoader.RegisterKeybind(this, "Open Customization Menu", "NumPad7");
 			_rightLock = new("rightLock", BindingFlags.NonPublic | BindingFlags.Static, true);
 			_rightHover = new("rightHover", BindingFlags.NonPublic | BindingFlags.Static, true);
-			modMoonCharms = new();
+			modPlayers = new(typeof(PlayerLoader), "players", BindingFlags.NonPublic);
 		}
 		public override void Unload() {
 			BeastPlayers = null;
@@ -80,11 +79,11 @@ namespace BeastCustomization {
 			OpenMenuHotkey = null;
 			_rightLock = null;
 			_rightHover = null;
-			modMoonCharms = null;
 			BeastPlayerBase.ExportDatas = null;
 			BeastPlayerBase.ImportDatas = null;
 			BeastPlayerBase.NetSends = null;
 			BeastPlayerBase.NetReceives = null;
+			modPlayers = null;
 		}
 		public static void FillSpriteList(List<AutoCastingAsset<Texture2D>> list, string baseName, int startIndex = 1) {
 			while (Instance.RequestAssetIfExists($"{baseName}_{startIndex}", out Asset<Texture2D> sprite)) {
@@ -92,14 +91,15 @@ namespace BeastCustomization {
 				startIndex++;
 			}
 		}
+		internal static FastStaticFieldInfo<List<ModPlayer>> modPlayers;
 		public override void HandlePacket(BinaryReader reader, int whoAmI) {
 			byte mode = reader.ReadByte();
 			if (Main.netMode == NetmodeID.Server) {
 				switch (mode) {
 					case 0: {
 						short targetPlayer = reader.ReadInt16();
-						WolfColorPlayer syncPlayer = new();
 						ushort beastPlayerIndex = reader.ReadUInt16();
+						BeastPlayerBase syncPlayer = (modPlayers.GetValue()[BeastPlayers[beastPlayerIndex]] as BeastPlayerBase).CreateNew();
 						syncPlayer.NetReceive(reader);
 
 						ModPacket packet = GetPacket();
@@ -118,7 +118,10 @@ namespace BeastCustomization {
 					break;
 
 					case 1:
-					(Main.LocalPlayer.ModPlayers[BeastPlayers[reader.ReadUInt16()]] as BeastPlayerBase).SendData(reader.ReadInt16());
+					BeastPlayerBase beastPlayer = Main.LocalPlayer.ModPlayers[BeastPlayers[reader.ReadUInt16()]] as BeastPlayerBase;
+					short recipient = reader.ReadInt16();
+					DebugLogger.Info($"sending requested data {beastPlayer.Name} to {recipient}");
+					beastPlayer.SendData(recipient);
 					break;
 				}
 			}
@@ -985,6 +988,62 @@ namespace BeastCustomization {
 			gen.Emit(OpCodes.Ret);
 
 			return (Action<TParent, T>)setterMethod.CreateDelegate(typeof(Action<TParent, T>));
+		}
+	}
+	public class FastStaticFieldInfo<TParent, T> : FastStaticFieldInfo<T> {
+		public FastStaticFieldInfo(string name, BindingFlags bindingFlags, bool init = false) : base(typeof(TParent), name, bindingFlags, init) { }
+	}
+	public class FastStaticFieldInfo<T> {
+		public readonly FieldInfo field;
+		Func<T> getter;
+		Action<T> setter;
+		public FastStaticFieldInfo(Type type, string name, BindingFlags bindingFlags, bool init = false) {
+			field = type.GetField(name, bindingFlags | BindingFlags.Static);
+			if (field is null) throw new InvalidOperationException($"No such static field {name} exists");
+			if (init) {
+				getter = CreateGetter();
+				setter = CreateSetter();
+			}
+		}
+		public FastStaticFieldInfo(FieldInfo field, bool init = false) {
+			if (!field.IsStatic) throw new InvalidOperationException($"field {field.Name} is not static");
+			this.field = field;
+			if (init) {
+				getter = CreateGetter();
+				setter = CreateSetter();
+			}
+		}
+		public T GetValue() {
+			return (getter ??= CreateGetter())();
+		}
+		public void SetValue(T value) {
+			(setter ??= CreateSetter())(value);
+		}
+		private Func<T> CreateGetter() {
+			if (field.FieldType != typeof(T)) throw new InvalidOperationException($"type of {field.Name} does not match provided type {typeof(T)}");
+			string methodName = field.ReflectedType.FullName + ".get_" + field.Name;
+			DynamicMethod getterMethod = new DynamicMethod(methodName, typeof(T), new Type[] { }, true);
+			ILGenerator gen = getterMethod.GetILGenerator();
+
+			gen.Emit(OpCodes.Ldsfld, field);
+			gen.Emit(OpCodes.Ret);
+
+			return (Func<T>)getterMethod.CreateDelegate(typeof(Func<T>));
+		}
+		private Action<T> CreateSetter() {
+			if (field.FieldType != typeof(T)) throw new InvalidOperationException($"type of {field.Name} does not match provided type {typeof(T)}");
+			string methodName = field.ReflectedType.FullName + ".set_" + field.Name;
+			DynamicMethod setterMethod = new DynamicMethod(methodName, null, new Type[] { typeof(T) }, true);
+			ILGenerator gen = setterMethod.GetILGenerator();
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Stsfld, field);
+			gen.Emit(OpCodes.Ret);
+
+			return (Action<T>)setterMethod.CreateDelegate(typeof(Action<T>));
+		}
+		public static explicit operator T(FastStaticFieldInfo<T> fastFieldInfo) {
+			return fastFieldInfo.GetValue();
 		}
 	}
 	public class BeastCustomizationConfig : ModConfig {

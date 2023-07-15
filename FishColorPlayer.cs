@@ -1,4 +1,5 @@
 ﻿using BeastCustomization.Textures;
+using BeastCustomization.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
@@ -93,10 +94,10 @@ namespace BeastCustomization {
 		public Color eyesColor = new Color(242, 8, 46);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.scaleColor")]
-		public Color scaleColor = new Color(41, 185, 127);
+		public ColorDefinition scaleColor = new Color(41, 185, 127);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.scaleColor2")]
-		public Color scaleColor2 = new Color(168, 255, 106);
+		public ColorDefinition scaleColor2 = new Color(168, 255, 106);
 
 		TagCompound oldData;
 		#endregion fields
@@ -114,6 +115,12 @@ namespace BeastCustomization {
 			if (!overwrite) {
 				ImportData(oldData ??= new());
 				SendData();
+			}
+		}
+		public override void UpdateData(TagCompound tag, Version lastVersion, out bool warn) {
+			warn = false;
+			if (lastVersion < new Version(1, 3)) {
+				ColorToColorDefinition(tag);
 			}
 		}
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
@@ -134,12 +141,12 @@ namespace BeastCustomization {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
 				Merfolk.HeadScaleTextures[beastColorPlayer.headScaleStyle],
-				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.scaleColor),
+				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorHead),
 				true
 			);
 			yield return (
 				Merfolk.HeadSecondaryScaleTextures[beastColorPlayer.headScaleStyle2],
-				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.scaleColor2),
+				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorHead),
 				true
 			);
 			yield return (
@@ -172,11 +179,11 @@ namespace BeastCustomization {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
 				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.scaleColor)
+				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.scaleColor2)
+				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -198,11 +205,11 @@ namespace BeastCustomization {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
 				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.scaleColor)
+				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.scaleColor2)
+				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -224,11 +231,11 @@ namespace BeastCustomization {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
 				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.scaleColor)
+				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.scaleColor2)
+				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -250,11 +257,11 @@ namespace BeastCustomization {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
 			yield return (
 				Merfolk.LegsScaleTextures[beastColorPlayer.legsScaleStyle],
-				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.scaleColor)
+				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorLegs)
 			);
 			yield return (
 				Merfolk.LegsSecondaryScaleTextures[beastColorPlayer.legsScaleStyle2],
-				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.scaleColor2)
+				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorLegs)
 			);
 			if (beastColorPlayer.applyLegsOver) {
 				int slot = beastColorPlayer.GetSlot(2);

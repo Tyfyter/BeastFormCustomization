@@ -62,6 +62,14 @@ namespace BeastCustomization.UI {
 			}
 			return baseColor.MultiplyRGBA(lightColor ?? Color.White);
 		}
+		public override int GetHashCode() {
+			unchecked {
+				return (hairDye.type.GetHashCode() * 397) ^ baseColor.GetHashCode();
+			}
+		}
+		public override bool Equals(object obj) {
+			return obj is ColorDefinition other && baseColor.Equals(other.baseColor) && ((hairDye?.type ?? 0) == (other.hairDye?.type ?? 0));
+		}
 		public static implicit operator ColorDefinition(Color baseColor) => new(baseColor);
 	}
 }

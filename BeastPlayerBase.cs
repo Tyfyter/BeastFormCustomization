@@ -1,4 +1,5 @@
-﻿using BeastCustomization.Textures;
+﻿//#define VERBOSE_DEBUG
+using BeastCustomization.Textures;
 using BeastCustomization.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -82,16 +83,22 @@ namespace BeastCustomization {
 		public static Dictionary<Type, Action<BeastPlayerBase, BinaryWriter>> NetSends { get; set; }
 		public static Dictionary<Type, Action<BeastPlayerBase, BinaryReader>> NetReceives { get; set; }
 		public virtual void NetSend(BinaryWriter writer) {
+			BeastCustomization.DebugLogger.Info(Name + ": NetSend");
+			startPoint = writer.BaseStream.Position;
 			if (!(NetSends ??= new()).TryGetValue(GetType(), out var sendFunc)) {
 				NetSends.Add(GetType(), sendFunc = GenerateNetSend(GetType()));
 			}
 			sendFunc(this, writer);
+			BeastCustomization.DebugLogger.Info(writer.BaseStream.Position - startPoint);
 		}
 		public virtual void NetReceive(BinaryReader reader) {
+			BeastCustomization.DebugLogger.Info(Name + ": NetReceive");
+			startPoint = reader.BaseStream.Position;
 			if (!(NetReceives ??= new()).TryGetValue(GetType(), out var receiveFunc)) {
 				NetReceives.Add(GetType(), receiveFunc = GenerateNetReceive(GetType()));
 			}
 			receiveFunc(this, reader);
+			BeastCustomization.DebugLogger.Info(reader.BaseStream.Position - startPoint);
 		}
 		public abstract void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs);
 		public abstract void HideVanillaDrawLayers(PlayerDrawSet drawInfo, out bool hideHead, out bool hideBody, out bool hideLegs);
@@ -140,10 +147,9 @@ namespace BeastCustomization {
 			} else if (fromWho == -1) {
 				ModPacket packet = Mod.GetPacket();
 				packet.Write((byte)1);
-				packet.Write((short)toWho);
 				packet.Write(ModIndex);
-				BeastCustomization.DebugLogger.Info("SyncPlayer");
-				BeastCustomization.DebugLogger.Info(packet.BaseStream.Position);
+				packet.Write((short)toWho);
+				BeastCustomization.DebugLogger.Info(Name + $": SyncPlayer requesting data, {packet.BaseStream.Position}");
 				packet.Send(Player.whoAmI, -1);
 			}
 		}
@@ -154,8 +160,7 @@ namespace BeastCustomization {
 			packet.Write((short)toWho);
 			packet.Write(ModIndex);
 			NetSend(packet);
-			BeastCustomization.DebugLogger.Info("SendData");
-			BeastCustomization.DebugLogger.Info(packet.BaseStream.Position);
+			BeastCustomization.DebugLogger.Info(Name + ": SendData");
 			packet.Send(toWho, Player.whoAmI);
 		}
 		public int GetSlot(int slotNum) {
@@ -188,9 +193,19 @@ namespace BeastCustomization {
 		internal bool CheckSync(bool verbose) {
 			return CheckIntegrity((BeastPlayerBase first, BeastPlayerBase second) => {
 				MemoryStream stream = new MemoryStream();
-				first.NetSend(new BinaryWriter(stream));
+				BinaryWriter writer = new BinaryWriter(stream);
+				writer.Write((byte)0);
+				writer.Write((short)0);
+				writer.Write(first.ModIndex);
+				first.NetSend(writer);
+				//Main.NewText(stream.Position);
 				stream.Position = 0;
-				second.NetReceive(new BinaryReader(stream));
+				BinaryReader reader = new BinaryReader(stream);
+				reader.ReadByte();
+				reader.ReadInt16();
+				reader.ReadUInt16();
+				second.NetReceive(reader);
+				//Main.NewText(stream.Position);
 			}, "[c/FF0000:{0} field {1} not syncing properly]",
 			verbose ? "[c/00FF00:{0} field {1} syncing properly]" : null
 			);
@@ -235,11 +250,21 @@ namespace BeastCustomization {
 					field.SetValue(second, new Item(((((Item)field.GetValue(first))?.type ?? 0) + 1) % 7));
 					break;
 
-					case nameof(Color):
-					Color changeColor = (Color)field.GetValue(first);
-					changeColor.PackedValue = ~changeColor.PackedValue;
-					field.SetValue(second, changeColor);
-					break;
+					case nameof(Color): {
+						Color changeColor = (Color)field.GetValue(first);
+						changeColor.PackedValue = ~changeColor.PackedValue;
+						field.SetValue(second, changeColor);
+						break;
+					}
+
+					case nameof(ColorDefinition): {
+						ColorDefinition changeColor = (ColorDefinition)field.GetValue(first);
+						field.SetValue(second, new ColorDefinition(
+							new Color() { PackedValue = ~changeColor.baseColor.PackedValue },
+							new Item((changeColor.HairDye.type + 1) % 7)
+						));
+						break;
+					}
 				}
 			}
 			foreach (var field in fields) {
@@ -284,11 +309,14 @@ namespace BeastCustomization {
 					gen.Emit(OpCodes.Ldfld, field);
 					gen.Emit(write.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, write);
 
+#if VERBOSE_DEBUG
 					gen.Emit(OpCodes.Ldarg_0);
 					gen.Emit(OpCodes.Ldfld, field);
 					gen.Emit(OpCodes.Box, field.FieldType);
+					gen.Emit(OpCodes.Ldstr, field.Name);
 					gen.Emit(OpCodes.Ldarg_1);
 					gen.Emit(OpCodes.Call, info);
+#endif
 				}
 			}
 
@@ -325,11 +353,14 @@ namespace BeastCustomization {
 					gen.Emit(OpCodes.Stfld, field);
 
 					//gen.Emit(OpCodes.Ldstr, $"2 receiving {field} {read}");
+#if VERBOSE_DEBUG
 					gen.Emit(OpCodes.Ldarg_0);
 					gen.Emit(OpCodes.Ldfld, field);
 					gen.Emit(OpCodes.Box, field.FieldType);
+					gen.Emit(OpCodes.Ldstr, field.Name);
 					gen.Emit(OpCodes.Ldarg_1);
 					gen.Emit(OpCodes.Call, info);
+#endif
 				}
 			}
 
@@ -339,9 +370,8 @@ namespace BeastCustomization {
 		}
 		protected internal static Action<BeastPlayerBase, TagCompound> GenerateExportData(Type type) {
 			if (!type.IsAssignableTo(typeof(BeastPlayerBase))) throw new ArgumentException($"{nameof(type)} must extend {typeof(BeastPlayerBase)}", nameof(type));
-			DynamicMethod netRecieveMethod = new DynamicMethod($"{type.Name}_NetRecieve", null, new Type[] { typeof(BeastPlayerBase), typeof(TagCompound) }, true);
+			DynamicMethod netRecieveMethod = new DynamicMethod($"{type.Name}_NetExportData", null, new Type[] { typeof(BeastPlayerBase), typeof(TagCompound) }, true);
 			ILGenerator gen = netRecieveMethod.GetILGenerator();
-			MethodInfo info = typeof(BeastPlayerBase).GetMethod("_testSet", BindingFlags.NonPublic | BindingFlags.Static);
 			MethodInfo setItem = typeof(TagCompound).GetMethod("set_Item");
 
 			foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance).OrderBy(f => f.Name)) {
@@ -351,7 +381,7 @@ namespace BeastCustomization {
 					gen.Emit(OpCodes.Ldarg_0);
 					gen.Emit(OpCodes.Ldfld, field);
 					gen.Emit(OpCodes.Box, field.FieldType);
-					gen.Emit(OpCodes.Call, info);
+					gen.Emit(OpCodes.Call, setItem);
 				}
 			}
 
@@ -363,7 +393,6 @@ namespace BeastCustomization {
 			if (!type.IsAssignableTo(typeof(BeastPlayerBase))) throw new ArgumentException($"{nameof(type)} must extend {typeof(BeastPlayerBase)}", nameof(type));
 			DynamicMethod netRecieveMethod = new DynamicMethod($"{type.Name}_NetRecieve", null, new Type[] { typeof(BeastPlayerBase), typeof(TagCompound) }, true);
 			ILGenerator gen = netRecieveMethod.GetILGenerator();
-			MethodInfo info = typeof(BeastPlayerBase).GetMethod("_testSet", BindingFlags.NonPublic | BindingFlags.Static);
 			MethodInfo tryGet = typeof(TagCompound).GetMethod("TryGet");
 			Dictionary<Type, (MethodInfo, LocalVariableInfo)> typeData = new();
 
@@ -395,21 +424,19 @@ namespace BeastCustomization {
 
 			return netRecieveMethod.CreateDelegate<Action<BeastPlayerBase, TagCompound>>();
 		}
-		static void _testSet(TagCompound tag, string key, object value) {
-			tag[key] = value;
-		}
-		static void _testSend(object value, BinaryWriter writer) {
+		static long startPoint = 0;
+		static void _testSend(object value, string name, BinaryWriter writer) {
 			try {
-				BeastCustomization.DebugLogger.Debug($"sending {value} at position {writer.BaseStream.Position}");
+				BeastCustomization.DebugLogger.Debug($"sending {value} for {name} at position {writer.BaseStream.Position - startPoint} ({writer.BaseStream.Position})");
 			} catch (NullReferenceException) {
-				BeastCustomization.DebugLogger.Debug($"sending null at position {writer.BaseStream.Position}");
+				BeastCustomization.DebugLogger.Debug($"sending null for {name} at position {writer.BaseStream.Position - startPoint} ({writer.BaseStream.Position})");
 			}
 		}
-		static void _testReceive(object value, BinaryReader reader) {
+		static void _testReceive(object value, string name, BinaryReader reader) {
 			try {
-				BeastCustomization.DebugLogger.Debug($"receiving {value} at position {reader.BaseStream.Position}");
+				BeastCustomization.DebugLogger.Debug($"receiving {value} for {name} at position {reader.BaseStream.Position - startPoint} ({reader.BaseStream.Position})");
 			} catch (NullReferenceException) {
-				BeastCustomization.DebugLogger.Debug($"receiving null at position {reader.BaseStream.Position}");
+				BeastCustomization.DebugLogger.Debug($"receiving null for {name} at position {reader.BaseStream.Position - startPoint} ({reader.BaseStream.Position})");
 			}
 		}//*/
 	}

@@ -92,27 +92,19 @@ namespace BeastCustomization {
 		public bool applyLegs = false;
 
 		//[JsonIgnore]
-		[Label("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.applyHeadOver")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.applyHeadOver")]
 		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyHeadOver = false;
 
 		//[JsonIgnore]
-		[Label("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.applyBodyOver")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.applyBodyOver")]
 		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyBodyOver = false;
 
 		//[JsonIgnore]
-		[Label("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.applyLegsOver")]
+		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.applyLegsOver")]
 		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyLegsOver = false;
-
-		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.primaryHairDye")]
-		[CustomModConfigItem(typeof(HairDyeConfigElement))]
-		public Item primaryHairDye = new();
-
-		/*[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.secondaryHairDye")]
-		[CustomModConfigItem(typeof(HairDyeConfigElement))]
-		public Item secondaryHairDye = new();*/
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.eyesIrisColor")]
 		public Color eyesIrisColor = new Color(242, 8, 46);
@@ -124,26 +116,17 @@ namespace BeastCustomization {
 		public Color headTeethColor = new Color(227, 232, 238);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.headSecondaryColor")]
-		public Color headSecondaryColor = new Color(190, 153, 117);
+		public ColorDefinition headSecondaryColor = new Color(190, 153, 117);
 
+		[OldHairDyeField("primaryHairDye")]
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.primaryColor")]
-		public Color primaryColor = new Color(220, 153, 107);
+		public ColorDefinition primaryColor = new Color(220, 153, 107);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.bodySecondaryColor")]
-		public Color bodySecondaryColor = new Color(190, 153, 117);
+		public ColorDefinition bodySecondaryColor = new Color(190, 153, 117);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.clawsColor")]
 		public Color clawsColor = new Color(222, 206, 192);
-
-		[JsonIgnore]
-		public Color PrimaryColor {
-			get {
-				if (primaryHairDye is not null && primaryHairDye.hairDye > -1) {
-					return GameShaders.Hair.GetColor(primaryHairDye.hairDye, Player, Color.White);
-				}
-				return primaryColor;
-			}
-		}
 
 		TagCompound oldData;
 		#endregion fields
@@ -166,6 +149,12 @@ namespace BeastCustomization {
 				SendData();
 			}
 		}
+		public override void UpdateData(TagCompound tag, Version lastVersion, out bool warn) {
+			warn = false;
+			if (lastVersion < new Version(1, 3)) {
+				ColorToColorDefinition(tag);
+			}
+		}
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
 			applyHead = this.applyHead;
 			applyBody = this.applyBody;
@@ -184,12 +173,12 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.HeadPrimaryTextures[beastColorPlayer.headPrimaryStyle],
-				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.PrimaryColor),
+				beastColorPlayer.primaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorHead),
 				true
 			);
 			yield return (
 				Merwolf.HeadSecondaryTextures[beastColorPlayer.headSecondaryStyle],
-				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.headSecondaryColor),
+				beastColorPlayer.headSecondaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorHead),
 				true
 			);
 			yield return (
@@ -232,11 +221,11 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.BodyPrimaryTextures[beastColorPlayer.bodyPrimaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.PrimaryColor)
+				beastColorPlayer.primaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.bodySecondaryColor)
+				beastColorPlayer.bodySecondaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
@@ -259,11 +248,11 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.BodyPrimaryTextures[beastColorPlayer.bodyPrimaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.PrimaryColor)
+				beastColorPlayer.primaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.bodySecondaryColor)
+				beastColorPlayer.bodySecondaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
@@ -289,11 +278,11 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.BodyPrimaryTextures[beastColorPlayer.bodyPrimaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.PrimaryColor)
+				beastColorPlayer.primaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.bodySecondaryColor)
+				beastColorPlayer.bodySecondaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
 			);
 			yield return (
 				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
@@ -319,11 +308,11 @@ namespace BeastCustomization {
 			FishWolfColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishWolfColorPlayer>();
 			yield return (
 				Merwolf.LegsPrimaryTextures[beastColorPlayer.legsPrimaryStyle],
-				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.PrimaryColor)
+				beastColorPlayer.primaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorLegs)
 			);
 			yield return (
 				Merwolf.LegsSecondaryTextures[beastColorPlayer.legsSecondaryStyle],
-				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.bodySecondaryColor)
+				beastColorPlayer.bodySecondaryColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorLegs)
 			);
 			yield return (
 				Merwolf.LegsClawsTextures[beastColorPlayer.legsClawsStyle],
