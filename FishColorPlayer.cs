@@ -137,22 +137,20 @@ namespace BeastCustomization {
 	}
 	public class Merfolk_Head_Layer : GenericHeadLayer {
 		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
-		public override IEnumerable<(Texture2D texture, Color color, bool applyDye)> GetData(PlayerDrawSet drawInfo) {
+		public override IEnumerable<BeastLayerItem> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
-			yield return (
+			yield return beastColorPlayer.scaleColor.GetLayerItem(drawInfo, drawInfo.colorArmorHead,
 				Merfolk.HeadScaleTextures[beastColorPlayer.headScaleStyle],
-				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorHead),
-				true
+				applyDye: true
 			);
-			yield return (
+			yield return beastColorPlayer.scaleColor2.GetLayerItem(drawInfo, drawInfo.colorArmorHead,
 				Merfolk.HeadSecondaryScaleTextures[beastColorPlayer.headScaleStyle2],
-				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorHead),
-				true
+				applyDye: true
 			);
-			yield return (
+			yield return new(
 				Merfolk.EyesTextures[beastColorPlayer.headEyeStyle],
 				beastColorPlayer.eyesGlow ? beastColorPlayer.eyesColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesColor),
-				beastColorPlayer.eyesDye
+				applyDye: beastColorPlayer.eyesDye
 			);
 			if (beastColorPlayer.applyHeadOver) {
 				int slot = beastColorPlayer.GetSlot(0);
@@ -164,10 +162,10 @@ namespace BeastCustomization {
 							Main.instance.LoadArmorHead(backID);
 						}
 					}
-					yield return (
+					yield return new(
 						TextureAssets.ArmorHead[slot].Value,
 						drawInfo.colorArmorHead,
-						true
+						applyDye: true
 					);
 				}
 			}
@@ -175,15 +173,13 @@ namespace BeastCustomization {
 	}
 	public class Merfolk_Body_Layer : GenericBodyLayer {
 		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
-		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
+		public override IEnumerable<BeastLayerItem> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
-			yield return (
-				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle],
-				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
+			yield return beastColorPlayer.scaleColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle]
 			);
-			yield return (
-				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle],
-				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
+			yield return beastColorPlayer.scaleColor2.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle]
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -191,7 +187,7 @@ namespace BeastCustomization {
 					if (slot < ArmorIDs.Body.Count) {
 						Main.instance.LoadArmorBody(slot);
 					}
-					yield return (
+					yield return new(
 						TextureAssets.ArmorBodyComposite[slot].Value,
 						drawInfo.colorArmorBody
 					);
@@ -201,15 +197,13 @@ namespace BeastCustomization {
 	}
 	public class Merfolk_Arm_Layer_Back : GenericArmLayer_Back {
 		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
-		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
+		public override IEnumerable<BeastLayerItem> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
-			yield return (
-				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle],
-				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
+			yield return beastColorPlayer.scaleColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle]
 			);
-			yield return (
-				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle],
-				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
+			yield return beastColorPlayer.scaleColor2.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle]
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -217,7 +211,7 @@ namespace BeastCustomization {
 					if (slot < ArmorIDs.Body.Count) {
 						Main.instance.LoadArmorBody(slot);
 					}
-					yield return (
+					yield return new(
 						TextureAssets.ArmorBodyComposite[slot].Value,
 						drawInfo.colorArmorBody
 					);
@@ -227,15 +221,13 @@ namespace BeastCustomization {
 	}
 	public class Merfolk_Arm_Layer_Front : GenericArmLayer_Front {
 		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
-		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
+		public override IEnumerable<BeastLayerItem> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
-			yield return (
-				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle],
-				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
+			yield return beastColorPlayer.scaleColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merfolk.BodyScaleTextures[beastColorPlayer.bodyScaleStyle]
 			);
-			yield return (
-				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle],
-				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorBody)
+			yield return beastColorPlayer.scaleColor2.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merfolk.BodySecondaryScaleTextures[beastColorPlayer.bodySecondaryScaleStyle]
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -243,7 +235,7 @@ namespace BeastCustomization {
 					if (slot < ArmorIDs.Body.Count) {
 						Main.instance.LoadArmorBody(slot);
 					}
-					yield return (
+					yield return new(
 						TextureAssets.ArmorBodyComposite[slot].Value,
 						drawInfo.colorArmorBody
 					);
@@ -253,15 +245,13 @@ namespace BeastCustomization {
 	}
 	public class Merfolk_Legs_Layer : GenericLegsLayer {
 		public override Type BoundBeastPlayer => typeof(FishColorPlayer);
-		public override IEnumerable<(Texture2D texture, Color color)> GetData(PlayerDrawSet drawInfo) {
+		public override IEnumerable<BeastLayerItem> GetData(PlayerDrawSet drawInfo) {
 			FishColorPlayer beastColorPlayer = drawInfo.drawPlayer.GetModPlayer<FishColorPlayer>();
-			yield return (
-				Merfolk.LegsScaleTextures[beastColorPlayer.legsScaleStyle],
-				beastColorPlayer.scaleColor.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorLegs)
+			yield return beastColorPlayer.scaleColor.GetLayerItem(drawInfo, drawInfo.colorArmorLegs,
+				Merfolk.LegsScaleTextures[beastColorPlayer.legsScaleStyle]
 			);
-			yield return (
-				Merfolk.LegsSecondaryScaleTextures[beastColorPlayer.legsScaleStyle2],
-				beastColorPlayer.scaleColor2.GetColor(drawInfo.drawPlayer, drawInfo.colorArmorLegs)
+			yield return beastColorPlayer.scaleColor2.GetLayerItem(drawInfo, drawInfo.colorArmorLegs,
+				Merfolk.LegsSecondaryScaleTextures[beastColorPlayer.legsScaleStyle2]
 			);
 			if (beastColorPlayer.applyLegsOver) {
 				int slot = beastColorPlayer.GetSlot(2);
@@ -269,7 +259,7 @@ namespace BeastCustomization {
 					if (slot < ArmorIDs.Legs.Count) {
 						Main.instance.LoadArmorLegs(slot);
 					}
-					yield return (
+					yield return new(
 						TextureAssets.ArmorLeg[slot].Value,
 						drawInfo.colorArmorLegs
 					);

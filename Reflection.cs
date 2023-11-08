@@ -55,11 +55,13 @@ namespace BeastCustomization {
 			writer.Write((uint)colorDefinition.baseColor.PackedValue);
 			writer.Write((bool)colorDefinition.HasDye);
 			if (colorDefinition.HasDye) writer.Write((int)colorDefinition.hairDye.netID);
+			writer.Write((bool)colorDefinition.UseHairDyeShader);
 		}
 		public static ColorDefinition BinaryReaderReadColorDefinition(BinaryReader reader) {
 			return new(
 				new Color() { PackedValue = reader.ReadUInt32() },
-				reader.ReadBoolean() ? new Item(reader.ReadInt32()) : null
+				reader.ReadBoolean() ? new Item(reader.ReadInt32()) : null,
+				reader.ReadBoolean()
 			);
 		}
 	}

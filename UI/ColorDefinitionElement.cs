@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
+using ReLogic.Content;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,12 +9,15 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Terraria;
+using Terraria.Audio;
 using Terraria.GameContent;
+using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Config.UI;
 using Terraria.UI;
+using Terraria.UI.Chat;
 
 namespace BeastCustomization.UI {
 	public class ColorDefinitionElement : ConfigElement {
@@ -177,6 +181,18 @@ namespace BeastCustomization.UI {
 					}
 				}
 			}
+			//ConfigManager.WrapIt(this, ref height, new(typeof(ColorDefinition).GetProperty("UseHairDyeShader")), colorDefinition, order++);
+			BooleanElement hairDyeShaderElement = new() {
+			};
+			hairDyeShaderElement.Top.Pixels = height;
+			hairDyeShaderElement.Bind(new(typeof(ColorDefinition).GetProperty("UseHairDyeShader")), colorDefinition, null, order++);
+			hairDyeShaderElement.OnBind();
+			hairDyeShaderElement.Recalculate();
+			hairDyeShaderElement.Left.Pixels += 8f;
+			hairDyeShaderElement.Width.Pixels -= 16f;
+			height += (int)(hairDyeShaderElement.GetOuterDimensions().Height + 4);
+			Height.Pixels += hairDyeShaderElement.GetOuterDimensions().Height + 4;
+			Append(hairDyeShaderElement);
 			HairDyeConfigElement hairDyeElement = new() {
 				TextDisplayOverride = () => ""
 			};
@@ -195,5 +211,30 @@ namespace BeastCustomization.UI {
 			Main.spriteBatch.Draw(TextureAssets.MagicPixel.Value, hitbox, c.current);
 		}
 	}
+	public class BooleanElement : ConfigElement<bool> {
+		private Asset<Texture2D> _toggleTexture;
 
+		public override void OnBind() {
+			base.OnBind();
+			_toggleTexture = Main.Assets.Request<Texture2D>("Images/UI/Settings_Toggle");
+		}
+
+		protected override void DrawSelf(SpriteBatch spriteBatch) {
+			CalculatedStyle dimensions = GetDimensions();
+			Color backColor = new Color(200, 200, 200);
+			if (!PlayerInput.IgnoreMouseInterface && dimensions.ToRectangle().Contains(Main.mouseX, Main.mouseY)) {
+				backColor = Color.White;
+				//IsMouseHovering = true;
+				if (Main.mouseLeft && Main.mouseLeftRelease) {
+					Value = !Value;
+					SoundEngine.PlaySound(SoundID.MenuTick);
+				}
+			}
+			base.DrawSelf(spriteBatch);
+			ChatManager.DrawColorCodedStringWithShadow(spriteBatch, FontAssets.ItemStack.Value, Value ? Lang.menu[126].Value : Lang.menu[124].Value, new Vector2(dimensions.X + dimensions.Width - 60f, dimensions.Y + 8f), Color.White, 0f, Vector2.Zero, new Vector2(0.8f));
+			int halfWidth = (_toggleTexture.Width() - 2) / 2;
+			Rectangle sourceRectangle = new(Value ? (halfWidth + 2) : 0, 0, halfWidth, _toggleTexture.Height());
+			spriteBatch.Draw(position: new Vector2(dimensions.X + dimensions.Width - sourceRectangle.Width - 10f, dimensions.Y + 8f), texture: _toggleTexture.Value, sourceRectangle: sourceRectangle, color: backColor, rotation: 0f, origin: Vector2.Zero, scale: Vector2.One, effects: SpriteEffects.None, layerDepth: 0f);
+		}
+	}
 }
