@@ -673,12 +673,16 @@ namespace BeastCustomization {
 			if (drawInfo.drawPlayer.ModPlayers.Length <= 0) return;
 			int specificity = 0;
 			foreach (int i in BeastCustomization.BeastPlayers) {
-				if (drawInfo.drawPlayer.ModPlayers[i] is BeastPlayerBase beastPlayer && beastPlayer.IsActive && beastPlayer.Specificity > specificity) {
-					current = beastPlayer;
-					specificity = beastPlayer.Specificity;
+				if (drawInfo.drawPlayer.ModPlayers[i] is BeastPlayerBase beastPlayer) {
+					beastPlayer.isCurrent = false;
+					if (beastPlayer.IsActive && beastPlayer.Specificity > specificity) {
+						current = beastPlayer;
+						specificity = beastPlayer.Specificity;
+					}
 				}
 			}
 			if (current is not null) {
+				current.isCurrent = true;
 				current.ApplyVanillaDrawLayers(drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs);
 				if (applyHead) {
 					int slot = current.GetSlot(0);

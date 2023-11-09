@@ -157,18 +157,7 @@ namespace BeastCustomization {
 			hideLegs = !applyLegs || GetSlot(2) == -1;
 		}
 		public override void PreUpdate() {
-			int hairDye = Player.hairDye;
-			try {
-				Player.hairDye = furColor.HairDye.hairDye;
-				Player.UpdateHairDyeDust();
-			} catch (Exception) { }
-			try {
-				/*if (secondaryHairDye is not null) {
-					Player.hairDye = secondaryHairDye.hairDye;
-					Player.UpdateHairDyeDust();
-				}*/
-			} catch (Exception) { }
-			Player.hairDye = hairDye;
+			UpdateHairDyes(furColor);
 		}
 	}
 	public class Werewolf_Head_Layer : GenericHeadLayer {

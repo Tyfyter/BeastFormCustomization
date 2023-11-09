@@ -49,6 +49,7 @@ namespace BeastCustomization.UI {
 			get => hairDye ??= new();
 			set => hairDye = value;
 		}
+		[LabelKey("$Mods.BeastCustomization.UI.UseHairDyeShader")]
 		public bool UseHairDyeShader {
 			get => useHairDyeShader;
 			set => useHairDyeShader = value;

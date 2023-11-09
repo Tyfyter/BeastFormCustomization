@@ -29,6 +29,8 @@ namespace BeastCustomization {
 		public virtual string DisplayName => $"Mods.{Mod.Name}.Forms.{GetType().Name}.Name";
 		public virtual bool IsActive => false;
 		public virtual int Specificity => 0;
+		[JsonIgnore]
+		public bool isCurrent;
 		public override ModPlayer NewInstance(Player entity) {
 			ModPlayer modPlayer = base.NewInstance(entity);
 			(modPlayer as BeastPlayerBase).ModIndex = ModIndex;
@@ -162,6 +164,18 @@ namespace BeastCustomization {
 			NetSend(packet);
 			BeastCustomization.DebugLogger.Info(Name + ": SendData");
 			packet.Send(toWho, Player.whoAmI);
+		}
+
+		public void UpdateHairDyes(params ColorDefinition[] dyesToUpdate) {
+			if (!isCurrent) return;
+			int hairDye = Player.hairDye;
+			for (int i = 0; i < dyesToUpdate.Length; i++) {
+				try {
+					Player.hairDye = dyesToUpdate[i].HairDye.hairDye;
+					Player.UpdateHairDyeDust();
+				} catch (Exception) { }
+			}
+			Player.hairDye = hairDye;
 		}
 		public int GetSlot(int slotNum) {
 			switch (slotNum) {
