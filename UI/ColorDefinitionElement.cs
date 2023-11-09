@@ -181,9 +181,7 @@ namespace BeastCustomization.UI {
 					}
 				}
 			}
-			//ConfigManager.WrapIt(this, ref height, new(typeof(ColorDefinition).GetProperty("UseHairDyeShader")), colorDefinition, order++);
-			BooleanElement hairDyeShaderElement = new() {
-			};
+			BooleanElement hairDyeShaderElement = new();
 			hairDyeShaderElement.Top.Pixels = height;
 			hairDyeShaderElement.Bind(new(typeof(ColorDefinition).GetProperty("UseHairDyeShader")), colorDefinition, null, order++);
 			hairDyeShaderElement.OnBind();

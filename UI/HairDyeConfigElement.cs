@@ -76,7 +76,11 @@ namespace BeastCustomization.UI {
 				}
 			}
 			bool selectedBack = false;
-			if (getSelectedItem is not null) selectedBack = getSelectedItem().type == item.type;
+			if (getSelectedItem is not null) {
+				int selectedDye = getSelectedItem().hairDye;
+				if (selectedDye == -1) selectedDye = 0;
+				selectedBack = selectedDye == item.hairDye;
+			}
 			spriteBatch.Draw(
 				selectedBack ? TextureAssets.InventoryBack14.Value : TextureAssets.InventoryBack.Value,
 				dimensions,

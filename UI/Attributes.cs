@@ -20,4 +20,20 @@ namespace BeastCustomization.UI {
 		}
 		public string FieldName => fieldName;
 	}
+	[AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = true)]
+	public sealed class OldOverrideShaderFieldAttribute : Attribute {
+		readonly string fieldName;
+		readonly bool invert;
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="fieldName">the name of the field the value was formerly stored in</param>
+		/// <param name="fieldName">whether the resulting value should be inverted</param>
+		public OldOverrideShaderFieldAttribute(string fieldName, bool invert = false) {
+			this.fieldName = fieldName;
+			this.invert = invert;
+		}
+		public string FieldName => fieldName;
+		public bool Invert => invert;
+	}
 }

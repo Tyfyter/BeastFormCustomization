@@ -116,14 +116,25 @@ namespace BeastCustomization {
 		public virtual void UpdateData(TagCompound tag, Version lastVersion, out bool warn) { warn = false; }
 		public void ColorToColorDefinition(TagCompound tag) {
 			foreach (var field in GetType().GetFields().Where(f => f.FieldType == typeof(ColorDefinition))) {
-				if (tag[field.Name] is TagCompound) 
+				if (tag[field.Name] is not int) 
 					continue;
 				Item hairDye = null;
-				if (field.GetCustomAttribute<OldHairDyeFieldAttribute>() is OldHairDyeFieldAttribute oldHairDyeField) {
-					tag.TryGet(oldHairDyeField.FieldName, out hairDye);
-				}
+				try {
+					if (field.GetCustomAttribute<OldHairDyeFieldAttribute>() is OldHairDyeFieldAttribute oldHairDyeField) {
+						tag.TryGet(oldHairDyeField.FieldName, out hairDye);
+					}
+				} catch (Exception) { }
+
+				bool overrideShader = false;
+				try {
+					if (field.GetCustomAttribute<OldOverrideShaderFieldAttribute>() is OldOverrideShaderFieldAttribute oldOverrideShaderField) {
+						tag.TryGet(oldOverrideShaderField.FieldName, out overrideShader);
+						overrideShader ^= oldOverrideShaderField.Invert;
+					}
+				} catch (Exception) {}
+
 				if (tag.TryGet(field.Name, out Color color)) {
-					tag[field.Name] = new ColorDefinition(color, hairDye);
+					tag[field.Name] = new ColorDefinition(color, hairDye, overrideShader);
 				}
 			}
 		}

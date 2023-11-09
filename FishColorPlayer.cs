@@ -57,9 +57,6 @@ namespace BeastCustomization {
 		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.eyesGlow")]
 		public bool eyesGlow = false;
 
-		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.eyesDye")]
-		public bool eyesDye = false;
-
 		//[JsonIgnore]
 		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.applyHead")]
 		public bool applyHead = false;
@@ -90,8 +87,9 @@ namespace BeastCustomization {
 		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyLegsOver = false;
 
+		[OldOverrideShaderField("eyesDye", true)]
 		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.eyesColor")]
-		public Color eyesColor = new Color(242, 8, 46);
+		public ColorDefinition eyesColor = new Color(242, 8, 46);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishColorPlayer.scaleColor")]
 		public ColorDefinition scaleColor = new Color(41, 185, 127);
@@ -119,9 +117,7 @@ namespace BeastCustomization {
 		}
 		public override void UpdateData(TagCompound tag, Version lastVersion, out bool warn) {
 			warn = false;
-			if (lastVersion < new Version(1, 3)) {
-				ColorToColorDefinition(tag);
-			}
+			ColorToColorDefinition(tag);
 		}
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
 			applyHead = this.applyHead;
@@ -147,10 +143,9 @@ namespace BeastCustomization {
 				Merfolk.HeadSecondaryScaleTextures[beastColorPlayer.headScaleStyle2],
 				applyDye: true
 			);
-			yield return new(
-				Merfolk.EyesTextures[beastColorPlayer.headEyeStyle],
-				beastColorPlayer.eyesGlow ? beastColorPlayer.eyesColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesColor),
-				applyDye: beastColorPlayer.eyesDye
+			Color eyesLightColor = beastColorPlayer.eyesGlow ? (Color.White * (drawInfo.colorArmorHead.A / 255f)) : drawInfo.colorArmorHead;
+			yield return beastColorPlayer.eyesColor.GetLayerItem(drawInfo, eyesLightColor,
+				Merfolk.EyesTextures[beastColorPlayer.headEyeStyle]
 			);
 			if (beastColorPlayer.applyHeadOver) {
 				int slot = beastColorPlayer.GetSlot(0);

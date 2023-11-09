@@ -73,9 +73,6 @@ namespace BeastCustomization {
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.eyesGlow")]
 		public bool eyesGlow = false;
 
-		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.eyesDye")]
-		public bool eyesDye = false;
-
 		//[JsonIgnore]
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.applyHead")]
 		public bool applyHead = false;
@@ -106,14 +103,16 @@ namespace BeastCustomization {
 		[TooltipKey("$Mods.BeastCustomization.Forms.WolfColorPlayer.LooksRidiculous")]
 		public bool applyLegsOver = false;
 
+		[OldOverrideShaderField("eyesDye", true)]
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.eyesIrisColor")]
-		public Color eyesIrisColor = new Color(242, 8, 46);
+		public ColorDefinition eyesIrisColor = new Color(242, 8, 46);
 
+		[OldOverrideShaderField("eyesDye", true)]
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.eyesScleraColor")]
-		public Color eyesScleraColor = new Color(241, 241, 241);
+		public ColorDefinition eyesScleraColor = new Color(241, 241, 241);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.headTeethColor")]
-		public Color headTeethColor = new Color(227, 232, 238);
+		public ColorDefinition headTeethColor = new Color(227, 232, 238);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.headSecondaryColor")]
 		public ColorDefinition headSecondaryColor = new Color(190, 153, 117);
@@ -126,7 +125,7 @@ namespace BeastCustomization {
 		public ColorDefinition bodySecondaryColor = new Color(190, 153, 117);
 
 		[LabelKey("$Mods.BeastCustomization.Forms.FishWolfColorPlayer.clawsColor")]
-		public Color clawsColor = new Color(222, 206, 192);
+		public ColorDefinition clawsColor = new Color(222, 206, 192);
 
 		TagCompound oldData;
 		#endregion fields
@@ -151,9 +150,7 @@ namespace BeastCustomization {
 		}
 		public override void UpdateData(TagCompound tag, Version lastVersion, out bool warn) {
 			warn = false;
-			if (lastVersion < new Version(1, 3)) {
-				ColorToColorDefinition(tag);
-			}
+			ColorToColorDefinition(tag);
 		}
 		public override void ApplyVanillaDrawLayers(PlayerDrawSet drawInfo, out bool applyHead, out bool applyBody, out bool applyCloaks, out bool applyLegs) {
 			applyHead = this.applyHead;
@@ -179,20 +176,15 @@ namespace BeastCustomization {
 				Merwolf.HeadSecondaryTextures[beastColorPlayer.headSecondaryStyle],
 				applyDye: true
 			);
-			yield return new(
-				Merwolf.HeadTeethTextures[beastColorPlayer.headTeethStyle],
-				drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.headTeethColor),
-				applyDye: true
+			yield return beastColorPlayer.headTeethColor.GetLayerItem(drawInfo, drawInfo.colorArmorHead,
+				Merwolf.HeadTeethTextures[beastColorPlayer.headTeethStyle]
 			);
-			yield return new(
-				Merwolf.EyesScleraTextures[beastColorPlayer.eyesScleraStyle],
-				beastColorPlayer.eyesGlow ? beastColorPlayer.eyesScleraColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesScleraColor),
-				applyDye: beastColorPlayer.eyesDye
+			Color eyesLightColor = beastColorPlayer.eyesGlow ? (Color.White * (drawInfo.colorArmorHead.A / 255f)) : drawInfo.colorArmorHead;
+			yield return beastColorPlayer.eyesScleraColor.GetLayerItem(drawInfo, eyesLightColor,
+				Merwolf.EyesScleraTextures[beastColorPlayer.eyesScleraStyle]
 			);
-			yield return new(
-				Merwolf.EyesIrisTextures[beastColorPlayer.eyesIrisStyle],
-				beastColorPlayer.eyesGlow ? beastColorPlayer.eyesIrisColor : drawInfo.colorArmorHead.MultiplyRGBA(beastColorPlayer.eyesIrisColor),
-				applyDye: beastColorPlayer.eyesDye
+			yield return beastColorPlayer.eyesIrisColor.GetLayerItem(drawInfo, eyesLightColor,
+				Merwolf.EyesIrisTextures[beastColorPlayer.eyesIrisStyle]
 			);
 			if (beastColorPlayer.applyHeadOver) {
 				int slot = beastColorPlayer.GetSlot(0);
@@ -223,9 +215,8 @@ namespace BeastCustomization {
 			yield return beastColorPlayer.bodySecondaryColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle]
 			);
-			yield return new(
-				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor)
+			yield return beastColorPlayer.clawsColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle]
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -248,9 +239,8 @@ namespace BeastCustomization {
 			yield return beastColorPlayer.bodySecondaryColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle]
 			);
-			yield return new(
-				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor)
+			yield return beastColorPlayer.clawsColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle]
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -276,9 +266,8 @@ namespace BeastCustomization {
 			yield return beastColorPlayer.bodySecondaryColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
 				Merwolf.BodySecondaryTextures[beastColorPlayer.bodySecondaryStyle]
 			);
-			yield return new(
-				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle],
-				drawInfo.colorArmorBody.MultiplyRGBA(beastColorPlayer.clawsColor)
+			yield return beastColorPlayer.clawsColor.GetLayerItem(drawInfo, drawInfo.colorArmorBody,
+				Merwolf.BodyClawsTextures[beastColorPlayer.bodyClawsStyle]
 			);
 			if (beastColorPlayer.applyBodyOver) {
 				int slot = beastColorPlayer.GetSlot(1);
@@ -304,9 +293,8 @@ namespace BeastCustomization {
 			yield return beastColorPlayer.bodySecondaryColor.GetLayerItem(drawInfo, drawInfo.colorArmorLegs,
 				Merwolf.LegsSecondaryTextures[beastColorPlayer.legsSecondaryStyle]
 			);
-			yield return new(
-				Merwolf.LegsClawsTextures[beastColorPlayer.legsClawsStyle],
-				drawInfo.colorArmorLegs.MultiplyRGBA(beastColorPlayer.clawsColor)
+			yield return beastColorPlayer.clawsColor.GetLayerItem(drawInfo, drawInfo.colorArmorLegs,
+				Merwolf.LegsClawsTextures[beastColorPlayer.legsClawsStyle]
 			);
 			if (beastColorPlayer.applyLegsOver) {
 				int slot = beastColorPlayer.GetSlot(2);
